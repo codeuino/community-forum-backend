@@ -20,6 +20,7 @@ var app = express();
 var server = http.createServer(app);
 var io = require("socket.io")(server);
 
+
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,GET,OPTIONS");
