@@ -1,4 +1,3 @@
-
 const { buildSchema } = require("graphql");
 
 module.exports = buildSchema(`
@@ -61,10 +60,30 @@ input CategoryInput{
   categoryName: String!
 }
 
+type Tasks{
+  completed: Boolean,
+  description: String!,
+  assignedBy: user!,
+  date: String!,
+  topicId: String!,
+  userId: String!,
+  dueDate: String!
+}
+
+input TasksInput {
+  completed: Boolean,
+  description: String!,
+  assignedBy: String!,
+  topicId: String!,
+  userId: String!,
+  dueDate: String!
+}
+
 type RootQuery {
   topics: [topic!]!
   categories: [category!]!
   login(email: String!, password: String!): AuthData!
+  tasks(userId: String!): [Tasks!]
 }
 type AuthData {
   tokenexpiration: Int!, 
@@ -76,10 +95,10 @@ type RootMutation {
   createTopics(topicInput:TopicInput) : topic
   createCategories(categoryInput: CategoryInput): category
   createUser(userInput: UserInput): user
+  createTasks(TasksInput:TasksInput) : Tasks
 }
 schema {
   query: RootQuery
   mutation: RootMutation
 }
 `);
-
