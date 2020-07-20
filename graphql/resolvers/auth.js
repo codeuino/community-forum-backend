@@ -36,7 +36,7 @@ module.exports = {
         email: user.email,
         username: user.username
       },
-      process.env.JWT_TOKEN,
+      `${process.env.JWT_TOKEN}`,
       {
         expiresIn: "1h",
       }
