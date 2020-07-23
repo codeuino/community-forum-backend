@@ -1,25 +1,38 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
 const topicSchema = new Schema({
-    topicName: {
-        type: String,
-        required: true,
+  topicName: {
+    type: String,
+    required: true,
+  },
+  topicDescription: {
+    type: String,
+    required: true,
+  },
+  topicTags: {
+    type: [String],
+    required: true,
+  },
+  chats: [
+    {
+      _id: {
+        type: mongoose.Schema.Types.ObjectId,
+        auto: true,
+      },
+      replyTo: String,
+      avatarUrl: String,
+      username: String,
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      description: String,
+      likes: Number,
+      comments: Number,
     },
-    topicDescription: {
-        type: String,
-        required:true,
-    },
-    topicTags: {
-        type: [String],
-        required: true
-    },
-    idName:{
-        type:String,
-        required: true
-    }
-
+  ],
 });
 
-module.exports = mongoose.model('Topic',topicSchema);
+module.exports = mongoose.model("Topic", topicSchema);

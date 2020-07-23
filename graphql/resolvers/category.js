@@ -11,11 +11,13 @@ module.exports = {
       throw err;
     }
   },
-  createCategories: async (args) => {
+  createCategories: async (args,req) => {
+    if(!req.isAuth){
+      throw new Error('Not Authenticated!')
+    }
     try {
       let category = new Category({
         categoryName: args.categoryInput.categoryName,
-        idName: args.categoryInput.idName,
       });
       let result = await category.save();
       return { ...result._doc };

@@ -12,12 +12,7 @@ const categorySchema = new Schema({
            type: Schema.Types.ObjectId,
            ref: 'Topic' 
         }],
-    },
-    idName:{
-        type:String,
-        required: true
     }
-
 });
 
 module.exports = mongoose.model('Category',categorySchema);
