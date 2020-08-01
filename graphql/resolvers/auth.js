@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
+const hashRound = 12;
 const User = require("../../models/user");
 
 module.exports = {
@@ -10,7 +10,7 @@ module.exports = {
       if (existingUser) {
         throw new Error("User exist already.");
       }
-      const hashedPassword = await bcrypt.hash(args.userInput.password, 12);
+      const hashedPassword = await bcrypt.hash(args.userInput.password, hashRound);
       const user = new User({
         email: args.userInput.email,
         password: hashedPassword,

@@ -1,5 +1,5 @@
 const Task = require("../../models/task");
-const moment = require('moment');
+const moment = require("moment");
 
 module.exports = {
   tasks: async (args) => {
@@ -8,7 +8,11 @@ module.exports = {
         "assignedBy"
       );
       return tasks.map((result) => {
-        return { ...result._doc,date: moment(result._doc.date).format('ll') };
+        return {
+          ...result._doc,
+          date: moment(result._doc.date).format("ll"),
+          dueDate: moment(result._doc.dueDate).format("ll"),
+        };
       });
     } catch (err) {
       throw err;
@@ -20,13 +24,14 @@ module.exports = {
     }
     try {
       console.log(args);
+      let dueDateMoment = moment(args.TasksInput.dueDate, "YYYY-MM-DD");
       let task = new Task({
         description: args.TasksInput.description,
         completed: args.TasksInput.completed,
         assignedBy: args.TasksInput.assignedBy,
         topicId: args.TasksInput.topicId,
         userId: args.TasksInput.userId,
-        dueDate: args.TasksInput.dueDate,
+        dueDate: dueDateMoment,
       });
       let result = await task.save();
       return { ...result._doc };

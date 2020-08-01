@@ -60,7 +60,22 @@ input CategoryInput{
   categoryName: String!
 }
 
+type Users{
+  _id: String!,
+  email: String!,
+  username: String!
+}
+
+type Announcements{ 
+  _id: String!
+  announcement: String!
+  user: user!
+  date: String!
+  topic: topic!
+}
+
 type Tasks{
+  _id: String!
   completed: Boolean,
   description: String!,
   assignedBy: user!,
@@ -79,11 +94,19 @@ input TasksInput {
   dueDate: String!
 }
 
+input announcementInput {
+  userId: String!,
+  topicId: String!,
+  announcement: String!
+}
+
 type RootQuery {
   topics: [topic!]!
   categories: [category!]!
   login(email: String!, password: String!): AuthData!
   tasks(userId: String!): [Tasks!]
+  users: [Users!]!
+  announcements: [Announcements!]!
 }
 type AuthData {
   tokenexpiration: Int!, 
@@ -92,6 +115,7 @@ type AuthData {
   username: String!
 }
 type RootMutation {
+  createAnnouncement(announcementInput: announcementInput) : Announcements
   createTopics(topicInput:TopicInput) : topic
   createCategories(categoryInput: CategoryInput): category
   createUser(userInput: UserInput): user
