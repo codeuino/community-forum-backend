@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const hashRound = 12;
+require('dotenv').config();
 const User = require("../../models/user");
 
 module.exports = {
@@ -13,7 +14,7 @@ module.exports = {
       const hashedPassword = await bcrypt.hash(args.userInput.password, hashRound);
       const user = new User({
         email: args.userInput.email,
-        password: hashedPassword,
+        password: args.userInput.password,
         username: args.userInput.username,
       });
       const result = await user.save();
@@ -37,7 +38,7 @@ module.exports = {
         email: user.email,
         username: user.username
       },
-      "somesupersecretkey",
+      `${process.env.JWT_TOKEN}`,
       {
         expiresIn: "1h",
       }
