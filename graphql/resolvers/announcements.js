@@ -11,11 +11,11 @@ module.exports = {
       throw err;
     }
   },
-  createAnnouncement: async (args,req) => {
+  createAnnouncement: async (args, req) => {
     if (!req.isAuth) {
       throw new Error("Not Authenticated!");
     }
-    console.log('authenticated')
+    console.log("authenticated");
     try {
       let announcement = new Announcement({
         announcement: args.announcementInput.announcement,
@@ -23,7 +23,7 @@ module.exports = {
         topic: args.announcementInput.topicId,
       });
       let result = await announcement.save();
-      console.log('saved')
+      console.log("saved");
       return { ...result._doc };
     } catch (err) {
       throw err;

@@ -12,6 +12,7 @@ var graphQlSchema = require("./graphql/schema/index");
 var graphQlResolvers = require("./graphql/resolvers/index");
 var isAuth = require("./middleware/is-auth");
 var User = require("./models/user");
+var Topic = require("./models/topic");
 var Task = require("./models/task");
 const { topics } = require("./graphql/resolvers/index");
 require("./config/mongoose");
@@ -53,31 +54,27 @@ io.sockets.on("connection", function (socket, client) {
   socket.on("newMessage", async (data) => {
     try {
       console.log(data);
-      let Topic = await Topic.findById(data.topicId, async function (
-        err,
-        Topic
-      ) {
-        if (err) {
-          throw new Error(err);
-        } else {
-          return Topic;
-        }
-      });
-      let user = await User.findById(data.userId, function (err, user) {
+      Topic.findById(data.topicId, async function (err, Topic) {
         if (err) {
           throw new Error(err);
         }
-        return user.username;
+        let user = await User.findById(data.userId, function (err, user) {
+          if (err) {
+            throw new Error(err);
+          }
+          return user.username;
+        });
+        console.log(user.username);
+        let newChat = {
+          username: user.username,
+          replyTo: data.replyTo,
+          description: data.description,
+          userId: user._id,
+        };
+        Topic.chats.push(newChat);
+        await Topic.save();
+        io.to(data.topicId).emit("newChat", Topic.chats.pop());
       });
-      let newChat = {
-        username: user.username,
-        replyTo: data.replyTo,
-        description: data.description,
-        userId: user._id,
-      };
-      Topic.chats.push(newChat);
-      await Topic.save();
-      io.to(data.topicId).emit("newChat", Topic.chats.pop());
     } catch {
       console.log("Error");
     }
