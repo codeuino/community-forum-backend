@@ -8,7 +8,6 @@ module.exports = {
     }
     try {
       let topic = await Topic.findById(args.topicId);
-      console.log(topic);
       return topic.chats.map(async (chatId) => {
         let message = await Message.findById(chatId);
         return { ...message._doc };
