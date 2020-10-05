@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const Schema = mongoose.Schema;
 
 const topicSchema = new Schema({
@@ -9,30 +8,25 @@ const topicSchema = new Schema({
   },
   topicDescription: {
     type: String,
-    required: true,
+    default: null,
   },
   topicTags: {
-    type: [String],
-    required: true,
+    type: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
   },
-  chats: [
-    {
-      _id: {
-        type: mongoose.Schema.Types.ObjectId,
-        auto: true,
+  chats: {
+    type: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Message",
+        required: true,
       },
-      replyTo: String,
-      avatarUrl: String,
-      username: String,
-      userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-      description: String,
-      likes: Number,
-      comments: Number,
-    },
-  ],
+    ],
+  },
 });
 
 module.exports = mongoose.model("Topic", topicSchema);
