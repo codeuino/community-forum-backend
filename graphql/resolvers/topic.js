@@ -1,7 +1,6 @@
 const Topic = require("../../models/topic");
 const Category = require("../../models/category");
 
-
 module.exports = {
   topics: async () => {
     try {
@@ -16,23 +15,20 @@ module.exports = {
   },
   createTopics: async (args, req) => {
     if (!req.isAuth) {
-      throw new Error("Not Authenticated!");
+      throw new Error("Please login to continue");
     }
     try {
       let topic = new Topic({
         topicName: args.topicInput.topicName,
         topicDescription: args.topicInput.topicDescription,
         topicTags: args.topicInput.topicTags,
-        chats: args.topicInput.chats
+        chats: args.topicInput.chats,
       });
-      console.log(args.topicInput);
       let saveTopic = await topic.save();
-      let createTopic = { ...saveTopic._doc };
-      let categories = await Category.findById(args.topicInput.categoryID);
-      // console.log(categories)
+      let categories = await Category.findById(args.topicInput.categoryId);
       categories.topicIds.push(topic);
       await categories.save();
-      return createTopic;
+      return { ...saveTopic._doc };
     } catch (err) {
       console.log(err);
       throw err;
