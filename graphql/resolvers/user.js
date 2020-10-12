@@ -1,11 +1,24 @@
 require("dotenv").config();
 const User = require("../../models/user");
 const Organization = require("../../models/organization");
+const {
+  authenticationError,
+  userExistError,
+  noOrganizationError,
+  adminAccessError,
+  firstAdminBlockError,
+  firstAdminRemoveError,
+  noUserError,
+} = require("./errorMessages");
+const {
+  userBlockResult,
+  userRemoveResult,
+} = require("./resultMessages");
 
 module.exports = {
-  users: async () => {
+  users: async (req) => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
     try {
       if (req.currentUser.isAdmin) {
@@ -15,63 +28,53 @@ module.exports = {
         );
         return users;
       } else {
-        throw new Error("Admin authorization required");
+        throw new Error(adminAccessError);
       }
     } catch (err) {
       console.log(err);
       throw err;
     }
   },
+
   createUser: async (args) => {
     try {
-      const existingUser = await User.findOne({ email: args.userInput.email });
+      const existingUser = await User.findOne({
+        email: args.userInput.email,
+      }).lean();
       if (existingUser) {
-        throw Error("User is already registered");
+        throw new Error(userExistError);
       }
-      let user;
-      if (User.count() === 0) {
-        if (Organization.count() === 0) {
-          throw Error("Organization to be created first");
+      let user, organization;
+      const users = await User.find({}).lean();
+      const organizations = await Organization.find({}).lean();
+      if (users.length === 0) {
+        if (organizations.length === 0) {
+          throw new Error(noOrganizationError);
         } else {
+          organization = await Organization.findOne();
           user = new User({
-            name: {
-              firstName: args.userInput.firstName,
-              lastName: args.userInput.lastName,
-            },
+            name: args.userInput.name,
             email: args.userInput.email,
             password: args.userInput.password,
             phone: args.userInput.phone,
             isFirstAdmin: true,
             isAdmin: true,
             isModerator: true,
-            info: {
-              about: {
-                shortDescription: args.userInput.shortDescription,
-                designation: args.userInput.designation,
-              },
-            },
+            info: args.userInput.info,
           });
+          organization.adminInfo.adminIds.push(user);
         }
       } else {
         user = new User({
-          name: {
-            firstName: args.userInput.firstName,
-            lastName: args.userInput.lastName,
-          },
+          name: args.userInput.name,
           email: args.userInput.email,
           password: args.userInput.password,
           phone: args.userInput.phone,
-          info: {
-            about: {
-              shortDescription: args.userInput.shortDescription,
-              designation: args.userInput.designation,
-            },
-          },
+          info: args.userInput.info,
         });
       }
       const saveUser = await user.save();
-      const organization = await Organization.findOne();
-      organization.totalUser += 1;
+      organization.totalUsers += 1;
       await organization.save();
       return { ...saveUser._doc };
     } catch (err) {
@@ -79,9 +82,10 @@ module.exports = {
       throw err;
     }
   },
-  updateUser: async (args) => {
+
+  updateUser: async (req, args) => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
     try {
       const user = await User.updateOne(
@@ -95,12 +99,7 @@ module.exports = {
             email: args.userInput.email,
             password: args.userInput.password,
             phone: args.userInput.phone,
-            info: {
-              about: {
-                shortDescription: args.userInput.shortDescription,
-                designation: args.userInput.designation,
-              },
-            },
+            info: args.userInput.info,
           },
         }
       );
@@ -110,79 +109,81 @@ module.exports = {
       throw err;
     }
   },
-  blockUser: async (args) => {
+
+  blockUser: async (req, args) => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
     try {
       if (req.currentUser.isAdmin) {
         let user;
         if (args.userFindInput.email) {
           user = await User.findOne({ email: args.userFindInput.email });
-        } else if (args.userFindInput.id) {
-          user = await User.findById(args.userFindInput.id);
+        } else if (args.userFindInput._id) {
+          user = await User.findById(args.userFindInput._id);
         }
         if (!user) {
-          throw new Error("User not registered");
+          throw new Error(noUserError);
         }
         if (user.isFirstAdmin) {
-          throw new Error("First Admin can't be blocked");
+          throw new Error(firstAdminBlockError);
         }
         user.isActivated = false;
         await user.save();
         const organization = await Organization.findOne();
         organization.blockedUsers.push(user);
         await organization.save();
-        return { result: "User blocked successfully" };
+        return { result: userBlockResult };
       } else {
-        throw new Error("Admin Authorization required");
+        throw new Error(adminAccessError);
       }
     } catch (err) {
       console.log(err);
       throw err;
     }
   },
-  removeUser: async (args) => {
+
+  removeUser: async (req, args) => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
     try {
       let user;
       const organization = await Organization.findOne();
-      if (!args.userFindInput.email && !args.userFindInput.id) {
+      if (!args.userFindInput.email && !args.userFindInput._id) {
         user = await User.findById(req.currentUser.id);
         if (!user) {
-          throw new Error("User not registered");
+          throw new Error(noUserError);
         }
         if (user.isFirstAdmin) {
-          throw new Error("First Admin can't be removed");
+          throw new Error(firstAdminRemoveError);
         }
         user.isRemoved = true;
         await user.save();
         organization.totalUser -= 1;
         if (user.isAdmin) {
           organization.adminInfo.adminIds = organization.adminInfo.adminIds.filter(
-            (adminId) => adminId !== user.id
+            (adminId) => adminId.toString() !== user.id
           );
         }
         if (user.isModerator) {
           organization.moderatorInfo.moderatorIds = organization.moderatorInfo.moderatorIds.filter(
-            (moderatorId) => moderatorId !== user.id
+            (moderatorId) => moderatorId.toString() !== user.id
           );
         }
         await organization.save();
-        return { result: "User removed successfully" };
+        return { result: userRemoveResult };
       } else {
         if (args.userFindInput.email) {
           user = await User.findOne({ email: args.userFindInput.email });
-        } else if (args.userFindInput.id) {
-          user = await User.findById(args.userFindInput.id);
+        } else if (args.userFindInput._id) {
+          user = await User.findById(args.userFindInput._id);
         }
         if (!user) {
-          throw new Error("User not registered");
+          throw new Error(noUserError);
         }
         if (user.isFirstAdmin) {
-          throw new Error("First Admin can't be removed");
+          throw new Error(firstAdminRemoveError);
         }
         if (req.currentUser.isAdmin) {
           user.isRemoved = true;
@@ -190,18 +191,18 @@ module.exports = {
           organization.totalUser -= 1;
           if (user.isAdmin) {
             organization.adminInfo.adminIds = organization.adminInfo.adminIds.filter(
-              (adminId) => adminId !== user.id
+              (adminId) => adminId.toString() !== user.id
             );
           }
           if (user.isModerator) {
             organization.moderatorInfo.moderatorIds = organization.moderatorInfo.moderatorIds.filter(
-              (moderatorId) => moderatorId !== user.id
+              (moderatorId) => moderatorId.toString() !== user.id
             );
           }
           await organization.save();
-          return { result: "User removed successfully" };
+          return { result: userRemoveResult };
         } else {
-          throw new Error("Admin Authorization required");
+          throw new Error(adminAccessError);
         }
       }
     } catch (err) {
@@ -209,9 +210,11 @@ module.exports = {
       throw err;
     }
   },
-  getSelfCategories: async () => {
+
+  //schema to be written -> alongwith Categories and Tasks API
+  getSelfCategories: async (req) => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
     try {
       const user = (await User.findById(req.currentUser.id)).populate(
@@ -223,9 +226,10 @@ module.exports = {
       throw err;
     }
   },
+
   getSelfTopics: async () => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
     try {
       const user = (await User.findById(req.currentUser.id)).populate(
@@ -237,5 +241,5 @@ module.exports = {
       throw err;
     }
   },
-  //forgot password resolver
+  //forgot password resolver to be added
 };

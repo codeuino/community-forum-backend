@@ -1,219 +1,231 @@
 require("dotenv").config();
 const User = require("../../models/user");
 const Organization = require("../../models/organization");
+const { 
+  organizationCreatedResult, 
+  madeAdminResult, 
+  madeModeratorResult, 
+  removeAdminResult, 
+  removeModeratorResult } = require("./resultMessages");
+const { authenticationError, 
+  adminAccessError, 
+  noUserError, 
+  organizationExistError, 
+  firstAdminDemoteError, 
+  noAdminError, 
+  noModeratorError } = require("./errorMessages");
 
 module.exports = {
   createOrganization: async (args) => {
     try {
-      if (Organization.count() === 0) {
+      const organizations = await Organization.find({}).lean();
+      if (organizations.length === 0) {
         const organization = new Organization({
           name: args.organizationInput.name,
-          description: {
-            shortDescription: args.organizationInput.shortDescription,
-            longDescription: args.organizationInput.longDescription,
-          },
-          contactInfo: {
-            email: args.organizationInput.email,
-            website: args.organizationInput.website,
-          },
+          description: args.organizationInput.description,
+          contactInfo: args.organizationInput.contactInfo,
         });
         await organization.save();
-        return { result: "Organization created successfully" };
+        return { result: organizationCreatedResult };
       } else {
-        throw new Error("Organization can be created only once");
+        throw new Error(organizationExistError);
       }
     } catch (err) {
       console.log(err);
       throw err;
     }
   },
+
   getOrganization: async () => {
-    if (!req.isAuth) {
-      throw new Error("Authentication required");
-    }
     try {
-      if (req.currentUser.isAdmin) {
-        const organization = await Organization.findOne();
-        return organization;
-      } else {
-        throw new Error("Admin authorization required");
-      }
+      const organization = await Organization.findOne().lean();
+      return organization;
     } catch (err) {
       console.log(err);
       throw err;
     }
   },
-  updateOrganization: async (args) => {
+
+  updateOrganization: async (req, args) => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
     try {
-      if (req.currentUser.isAdmin) {
+      const organizations = await Organization.find({}).lean();
+      if (req.currentUser.isAdmin && organizations.length !== 0) {
         const organization = await Organization.updateOne(
           {},
           {
             $set: {
               name: args.organizationInput.name,
-              description: {
-                shortDescription: args.organizationInput.shortDescription,
-                longDescription: args.organizationInput.longDescription,
-              },
-              contactInfo: {
-                email: args.organizationInput.email,
-                website: args.organizationInput.website,
-              },
+              description: args.organizationInput.description,
+              contactInfo: args.organizationInput.contactInfo,
             },
           }
         );
         return { ...organization._doc };
       } else {
-        throw new Error("Admin authorization required");
+        throw new Error(adminAccessError);
       }
     } catch (err) {
       console.log(err);
       throw err;
     }
   },
-  makeAdmin: async (args) => {
+
+  makeAdmin: async (req, args) => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
     try {
       if (req.currentUser.isAdmin) {
         let user;
         if (args.userFindInput.email) {
           user = await User.findOne({ email: args.userFindInput.email });
-        } else if (args.userFindInput.id) {
-          user = await User.findById(args.userFindInput.id);
+        } else if (args.userFindInput._id) {
+          user = await User.findById(args.userFindInput._id);
         }
         if (!user) {
-          throw new Error("User not registered");
+          throw new Error(noUserError);
         }
         user.isAdmin = true;
         await user.save();
-        const organization = await Organization.findOne();
+        const organization = await Organization.findOne({});
         organization.adminInfo.adminIds.push(user);
         await organization.save();
-        return { result: "User promoted to Admin authorization successfully" };
+        return { result: madeAdminResult };
       } else {
-        throw new Error("Admin Authorization required");
+        throw new Error(adminAccessError);
       }
     } catch (err) {
       console.log(err);
       throw err;
     }
   },
-  makeModerator: async (args) => {
+
+  makeModerator: async (req, args) => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
     try {
       if (req.currentUser.isAdmin) {
         let user;
         if (args.userFindInput.email) {
           user = await User.findOne({ email: args.userFindInput.email });
-        } else if (args.userFindInput.id) {
-          user = await User.findById(args.userFindInput.id);
+        } else if (args.userFindInput._id) {
+          user = await User.findById(args.userFindInput._id);
         }
         if (!user) {
-          throw new Error("User not registered");
+          throw new Error(noUserError);
         }
         user.isModerator = true;
         await user.save();
-        const organization = await Organization.findOne();
+        const organization = await Organization.findOne({});
         organization.moderatorInfo.moderatorIds.push(user);
         await organization.save();
         return {
-          result: "User promoted to Moderator authorization successfully",
+          result: madeModeratorResult,
         };
       } else {
-        throw new Error("Admin Authorization required");
+        throw new Error(adminAccessError);
       }
     } catch (err) {
       console.log(err);
       throw err;
     }
   },
-  removeAdmin: async (args) => {
+
+  removeAdmin: async (req, args) => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
+    console.log(args.userFindInput);
     try {
       if (req.currentUser.isAdmin) {
         let user;
-        if (args.email) {
+        if (args.userFindInput.email) {
           user = await User.findOne({ email: args.userFindInput.email });
-        } else if (args.userFindInput.id) {
-          user = await User.findById(args.userFindInput.id);
+        } else if (args.userFindInput._id) {
+          user = await User.findById(args.userFindInput._id);
         }
         if (!user) {
-          throw new Error("User not registered");
+          throw new Error(noUserError);
         }
         if (user.isFirstAdmin) {
-          throw new Error("First Admin can't be demoted");
+          throw new Error(firstAdminDemoteError);
+        }
+        if(!user.isAdmin) {
+          throw new Error(noAdminError);
         }
         user.isAdmin = false;
+        user.isModerator = false;
         await user.save();
-        const organization = await Organization.findOne();
+        const organization = await Organization.findOne({});
+        console.log(organization.adminInfo.adminIds);
         organization.adminInfo.adminIds = organization.adminInfo.adminIds.filter(
-          (adminId) => adminId !== user.id
+          (adminId) => adminId.toString() !== user.id
         );
         await organization.save();
-        return { result: "Admin demoted to User authorization successfully" };
+        return { result: removeAdminResult };
       } else {
-        throw new Error("Admin Authorization required");
+        throw new Error(adminAccessError);
       }
     } catch (err) {
       console.log(err);
       throw err;
     }
   },
-  removeModerator: async (args) => {
+
+  removeModerator: async (req, args) => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
     try {
       if (req.currentUser.isAdmin) {
         let user;
         if (args.email) {
           user = await User.findOne({ email: args.userFindInput.email });
-        } else if (args.userFindInput.id) {
-          user = await User.findById(args.userFindInput.id);
+        } else if (args.userFindInput._id) {
+          user = await User.findById(args.userFindInput._id);
         }
         if (!user) {
-          throw new Error("User not registered");
+          throw new Error(noUserError);
+        }
+        if (!user.isModerator) {
+          throw new Error(noModeratorError);
         }
         user.isModerator = false;
         await user.save();
-        const organization = await Organization.findOne();
+        const organization = await Organization.findOne({});
         organization.moderatorInfo.moderatorIds = organization.moderatorInfo.moderatorIds.filter(
-          (moderatorId) => moderatorId !== user.id
+          (moderatorId) => moderatorId.toString() !== user.id
         );
         await organization.save();
         return {
-          result: "Moderator demoted to User authorization successfully",
+          result: removeModeratorResult,
         };
       } else {
-        throw new Error("Admin Authorization required");
+        throw new Error(adminAccessError);
       }
     } catch (err) {
       console.log(err);
       throw err;
     }
   },
-  getAdminModerators: async () => {
+
+  getAdminModerators: async (req) => {
     if (!req.isAuth) {
-      throw new Error("Authentication required");
+      throw new Error(authenticationError);
     }
     try {
       if (req.currentUser.isAdmin) {
-        const organization = await (await Organization.findOne()).populate();
+        const organization = await Organization.findOne({}).populate();
         return {
           admins: organization.adminInfo.adminIds,
           moderators: organization.moderatorInfo.moderatorIds,
         };
       } else {
-        throw new Error("Admin Authorization required");
+        throw new Error(adminAccessError);
       }
     } catch (err) {
       console.log(err);

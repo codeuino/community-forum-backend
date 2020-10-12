@@ -1,177 +1,150 @@
 const { buildSchema } = require("graphql");
 
 module.exports = buildSchema(`
-type user {
-  _id: String!
-  name: {
-    firstName: String!
-    lastName: String!
-  }
-  email: String!
-  phone: String
-  socialMedia: {
-    youtube: String
-    facebook: String
-    twitter: String
-    github: String
-    linkedin: String
-  }
-  info: {
-    about: {
-      shortDescription: String!
-      designation: String
-    }
-    avatarUrl: String
-  }
-  isFirstAdmin: Boolean
-  isAdmin: Boolean
-  isModerator: Boolean
-  isActivated: Boolean
-  isRemoved: Boolean
+type userName {
+  firstName: String!
+  lastName: String!
 }
 
-input UserInput {
-  name: {
-    firstName: String!
-    lastName:  String!
-  }
+type userSocialMedia {
+  youtube: String
+  facebook: String
+  twitter: String
+  github: String
+  linkedin: String
+}
+
+type userInfo {
+  about: userAbout!
+  avatarUrl: String
+}
+
+type userAbout {
+  shortDescription: String!
+  designation: String
+}
+
+type user {
+  _id: String!
+  name: userName
+  email: String!
+  phone: String
+  socialMedia: userSocialMedia
+  info: userInfo!
+  isFirstAdmin: Boolean!
+  isAdmin: Boolean!
+  isModerator: Boolean!
+  isActivated: Boolean!
+  isRemoved: Boolean!
+}
+
+input userNameInput {
+  firstName: String!
+  lastName: String!
+}
+
+input userSocialMediaInput {
+  youtube: String
+  facebook: String
+  twitter: String
+  github: String
+  linkedin: String
+}
+
+input userInfoInput {
+  about: userAboutInput!
+  avatarUrl: String
+}
+
+input userAboutInput {
+  shortDescription: String!
+  designation: String
+}
+
+input userInput {
+  name: userNameInput!
   email: String!
   password: String!
   phone: String
-  socialMedia: {
-    youtube: String
-    facebook: String
-    twitter: String
-    github: String
-    linkedin: String
-  }
-  info: {
-    about: {
-      shortDescription: String!
-      designation: String
-    }
-    avatarUrl: String
-  }
+  socialMedia: userSocialMediaInput
+  info: userInfoInput!
 }
 
-input UserFindInput {
+input userFindInput {
   _id: String
   email: String
+}
+
+type organizationDescription {
+  shortDescription: String!
+  longDescription: String
+}
+
+type organizationInfo {
+  email: String!
+  website: String!
 }
 
 type organization {
   _id: String!
   name: String!
-  description: {
-    shortDescription: String!
-    longDescription: String
-  }
-  contactInfo: {
-    email: String!
-    website: String!
-  }
+  description: organizationDescription!
+  contactInfo: organizationInfo!
   isArchived: Boolean!
   isUnderMaintenance: Boolean!
   totalUsers: Int!
 }
 
-input OrganizationInput {
+input organizationDescriptionInput {
+  shortDescription: String!
+  longDescription: String
+}
+
+input organizationInfoInput {
+  email: String!
+  website: String!
+}
+
+input organizationInput {
   name: String!
-  description: {
-    shortDescription: String!
-    longDescription: String
-  }
-  contactInfo: {
-    email: String!
-    website: String!
-  }
+  description: organizationDescriptionInput!
+  contactInfo: organizationInfoInput!
 }
 
-type AdminModeratorsData {
+type adminModeratorsData {
   admins: [user!]!
   moderators: [user!]!
 }
 
-type category {
-  _id: String!
-  categoryName: String!
-  topicIds: [String!]!
+type authData {
+  _id: String!,
+  name: String!
+  token: String!
+  tokenexpiration: Int!
 }
 
-input CategoryInput {
-  categoryName: String!
-}
-
-type message {
-  _id: String!
-  userId: String!
-  replyTo: String
-  description: String!
-  likes: Int!
-}
-
-type topic {
-  _id: String!
-  topicName: String!
-  topicDescription: String
-  topicTags: [String!]!
-  chats: [message!]!
-}
-
-input messageInput {
-  userId: String!
-  replyTo: String
-  description: String!
-  likes: Int
-}
-
-input TopicInput {
-  topicName: String!
-  topicDescription: String!
-  topicTags: [String!]
-  categoryId: String!
-  chats: [messageInput!]
-}
-
-type AuthData {
-  userId: String!,
-  username: String!
-  token: String!,
-  tokenexpiration: Int!,
-}
-
-type Result {
+type resultData {
   result: String!,
-}
-
-type AdminModeratorsData {
-  admins: [user!]!
-  moderators: [user!]!
 }
 
 type RootQuery {
   users: [user!]!
   getOrganization: organization!
-  getAdminModerators(): AdminModeratorsData!
-  topics: [topic!]!
-  categories: [category!]!
-  messages(topicId: String!): [message!]!
-  login(email: String!, password: String!): AuthData!
+  getAdminModerators: adminModeratorsData!
+  login(email: String!, password: String!): authData!
 }
 
 type RootMutation {
-  createTopics(topicInput:TopicInput) : topic
-  createCategories(categoryInput: CategoryInput): category
-  createUser(userInput: UserInput): user
-  updateUser(userInput: UserInput): user
-  blockUser(userFindInput: UserFindInput): Result
-  removeUser(userFindInput: UserFindInput): Result
-  createOrganization(organizationInput: OrganizationInput): Result
-  updateOrganization(organizatinInput: OrganizationInput): organization
-  makeAdmin(userFindInput: UserFindInput): Result
-  makeModerator(userFindInput: UserFindInput): Result
-  removeAdmin(userFindInput: UserFindInput): Result
-  removeModerator(userFindInput: UserFindInput): Result
+  createUser(userInput: userInput): user
+  updateUser(userInput: userInput): user
+  blockUser(userFindInput: userFindInput): resultData
+  removeUser(userFindInput: userFindInput): resultData
+  createOrganization(organizationInput: organizationInput): resultData
+  updateOrganization(organizationInput: organizationInput): organization
+  makeAdmin(userFindInput: userFindInput): resultData
+  makeModerator(userFindInput: userFindInput): resultData
+  removeAdmin(userFindInput: userFindInput): resultData
+  removeModerator(userFindInput: userFindInput): resultData
 }
 
 schema {
