@@ -111,6 +111,60 @@ input organizationInput {
   contactInfo: organizationInfoInput!
 }
 
+type category {
+  name: String!
+  description: String!
+  createdBy: String!
+  topics: [String!]!
+  isArchived: Boolean
+}
+
+input categoryInput {
+  name: String!
+  description: String!
+}
+
+input categoryFindInput {
+  _id: String!
+}
+
+type topic {
+  name: String!
+  description: String!
+  createdBy: String!
+  parentCategory: String!
+  tags: [String!]!
+  chats: [String!]!
+  isArchived: Boolean
+}
+
+input topicInput {
+  name: String!
+  description: String!
+  parentCategory: String!
+  tags: [String!]
+}
+
+input topicFindInput {
+  _id: String!
+}
+
+type chatUser {
+  name: userName!
+  info: userInfo!
+}
+
+type message {
+  userId: String!
+  user: chatUser
+  replyTo: String
+  description: String!
+  likes: Boolean!
+  isPinned: Boolean!
+  isTasked: Boolean!
+  isAnnounced: Boolean!
+}
+
 type adminModeratorsData {
   admins: [user!]!
   moderators: [user!]!
@@ -129,22 +183,36 @@ type resultData {
 
 type RootQuery {
   users: [user!]!
+  login(email: String!, password: String!): authData!
+  getSelfCategories: [category!]!
+  getSelfTopics: [topic!]!
   getOrganization: organization!
   getAdminModerators: adminModeratorsData!
-  login(email: String!, password: String!): authData!
+  categories: [category!]!
+  getCategoryTopics(categoryFindInput: categoryFindInput!): [topic!]!
+  topics: [topic!]!
+  getChats(topicFindInput: topicFindInput!): [message!]!
 }
 
 type RootMutation {
-  createUser(userInput: userInput): user
-  updateUser(userInput: userInput): user
-  blockUser(userFindInput: userFindInput): resultData
-  removeUser(userFindInput: userFindInput): resultData
-  createOrganization(organizationInput: organizationInput): resultData
-  updateOrganization(organizationInput: organizationInput): organization
-  makeAdmin(userFindInput: userFindInput): resultData
-  makeModerator(userFindInput: userFindInput): resultData
-  removeAdmin(userFindInput: userFindInput): resultData
-  removeModerator(userFindInput: userFindInput): resultData
+  createUser(userInput: userInput!): user!
+  updateUser(userInput: userInput!): user!
+  blockUser(userFindInput: userFindInput!): resultData!
+  removeUser(userFindInput: userFindInput!): resultData!
+  createOrganization(organizationInput: organizationInput!): resultData!
+  updateOrganization(organizationInput: organizationInput!): organization!
+  makeAdmin(userFindInput: userFindInput!): resultData!
+  makeModerator(userFindInput: userFindInput!): resultData!
+  removeAdmin(userFindInput: userFindInput!): resultData!
+  removeModerator(userFindInput: userFindInput!): resultData!
+  createCategory(categoryInput: categoryInput!): category!
+  archiveCategory(categoryFindInput: categoryFindInput!): resultData!
+  updateCategory(categoryFindInput: categoryFindInput!): category!
+  deleteCategory(categoryFindInput: categoryFindInput!): resultData!
+  createTopic(topicInput: topicInput!): topic!
+  archiveTopic(topicFindInput: topicFindInput!): resultData!
+  updateTopic(topicFindInput: topicFindInput!): topic!
+  deleteTopic(topicFindInput: topicFindInput!): resultData!
 }
 
 schema {

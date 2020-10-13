@@ -89,6 +89,7 @@ module.exports = {
           throw new Error(noUserError);
         }
         user.isAdmin = true;
+        user.isModerator = true;
         await user.save();
         const organization = await Organization.findOne({});
         organization.adminInfo.adminIds.push(user);

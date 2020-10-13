@@ -20,6 +20,14 @@ const topicSchema = new Schema({
     type: String,
     trim: true,
   },
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
+  parentCategory: {
+    type: Schema.Types.ObjectId,
+    ref: "Category",
+  },
   tags: {
     type: [
       {
@@ -36,10 +44,6 @@ const topicSchema = new Schema({
         required: true,
       },
     ],
-  },
-  isRemoved: {
-    type: Boolean,
-    default: false,
   },
   isArchived: {
     type: Boolean,

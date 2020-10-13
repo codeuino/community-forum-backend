@@ -211,7 +211,6 @@ module.exports = {
     }
   },
 
-  //schema to be written -> alongwith Categories and Tasks API
   getSelfCategories: async (req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
@@ -227,7 +226,7 @@ module.exports = {
     }
   },
 
-  getSelfTopics: async () => {
+  getSelfTopics: async (req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }

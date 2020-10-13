@@ -19,9 +19,13 @@ const messageSchema = new Schema({
     type: Number,
     default: 0,
   },
-  isRemoved: {
-    type: Boolean,
-    default: false,
+  parentTopic: {
+    type: Schema.Types.ObjectId,
+    ref: "Topic",
+  },
+  parentCategory: {
+    type: Schema.Types.ObjectId,
+    ref: "Category",
   },
   createdAt: {
     type: Date,
