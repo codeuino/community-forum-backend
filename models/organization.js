@@ -87,23 +87,21 @@ const orgSchema = new Schema({
       },
     },
   },
-  adminInfo: {
-    _id: false,
-    adminIds: [
+  adminIds: {
+    type: [
       {
         type: Schema.Types.ObjectId,
         ref: "User",
       },
-    ],
+    ]
   },
-  moderatorInfo: {
-    _id: false,
-    moderatorIds: [
+  moderatorIds: {
+    type: [
       {
         type: Schema.Types.ObjectId,
         ref: "User",
       },
-    ],
+    ]
   },
   isArchived: {
     type: Boolean,

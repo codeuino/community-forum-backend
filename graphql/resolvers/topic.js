@@ -6,11 +6,11 @@ const {
   topicRemovedError,
   blockRemoveUserError,
   noAuthorizationError,
-} = require("./errorMessages");
+} = require("../variables/errorMessages");
 const {
   topicDeleteResult,
   topicArchiveResult,
-} = require("./resultMessages");
+} = require("../variables/resultMessages");
 
 module.exports = {
   topics: async () => {

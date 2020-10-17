@@ -6,11 +6,11 @@ const {
   categoryRemovedError,
   blockRemoveUserError,
   noAuthorizationError,
-} = require("./errorMessages");
+} = require("../variables/errorMessages");
 const {
   categoryDeleteResult,
   categoryArchiveResult,
-} = require("./resultMessages");
+} = require("../variables/resultMessages");
 
 module.exports = {
   categories: async () => {

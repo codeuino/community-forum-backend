@@ -9,11 +9,11 @@ const {
   firstAdminBlockError,
   firstAdminRemoveError,
   noUserError,
-} = require("./errorMessages");
+} = require("../variables/errorMessages");
 const {
   userBlockResult,
   userRemoveResult,
-} = require("./resultMessages");
+} = require("../variables/resultMessages");
 
 module.exports = {
   users: async (req) => {
@@ -62,9 +62,10 @@ module.exports = {
             isModerator: true,
             info: args.userInput.info,
           });
-          organization.adminInfo.adminIds.push(user);
+          organization.adminIds.push(user);
         }
       } else {
+        organization = await Organization.findOne();
         user = new User({
           name: args.userInput.name,
           email: args.userInput.email,
@@ -162,12 +163,12 @@ module.exports = {
         await user.save();
         organization.totalUser -= 1;
         if (user.isAdmin) {
-          organization.adminInfo.adminIds = organization.adminInfo.adminIds.filter(
+          organization.adminIds = organization.adminIds.filter(
             (adminId) => adminId.toString() !== user.id
           );
         }
         if (user.isModerator) {
-          organization.moderatorInfo.moderatorIds = organization.moderatorInfo.moderatorIds.filter(
+          organization.moderatorIds = organization.moderatorIds.filter(
             (moderatorId) => moderatorId.toString() !== user.id
           );
         }
@@ -190,12 +191,12 @@ module.exports = {
           await user.save();
           organization.totalUser -= 1;
           if (user.isAdmin) {
-            organization.adminInfo.adminIds = organization.adminInfo.adminIds.filter(
+            organization.adminIds = organization.adminIds.filter(
               (adminId) => adminId.toString() !== user.id
             );
           }
           if (user.isModerator) {
-            organization.moderatorInfo.moderatorIds = organization.moderatorInfo.moderatorIds.filter(
+            organization.moderatorIds = organization.moderatorIds.filter(
               (moderatorId) => moderatorId.toString() !== user.id
             );
           }
