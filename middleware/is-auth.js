@@ -1,6 +1,7 @@
+const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
   const token =
     req.headers["authorization"] && req.headers["authorization"].split(" ")[1];
   if (!token) {
@@ -15,5 +16,9 @@ module.exports = (req, res, next) => {
   }
   req.isAuth = true;
   req.userId = decodedToken.userId;
+  const user = await User.findById(decodedToken.userId);
+  delete user[password];
+  user.token = decodedToken;
+  req.currentUser = user;
   next();
 };

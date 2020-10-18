@@ -4,24 +4,6 @@ require("dotenv").config();
 const User = require("../../models/user");
 
 module.exports = {
-  createUser: async (args) => {
-    try {
-      const existingUser = await User.findOne({ email: args.userInput.email });
-      if (existingUser) {
-        throw Error("User is already registered");
-      }
-      const user = new User({
-        email: args.userInput.email,
-        password: args.userInput.password,
-        username: args.userInput.username,
-      });
-      const saveUser = await user.save();
-      return { ...saveUser._doc };
-    } catch (err) {
-      console.log(err);
-      throw err;
-    }
-  },
   login: async (args) => {
     try {
       const user = await User.findOne({ email: args.email });
@@ -34,9 +16,7 @@ module.exports = {
       }
       const token = jwt.sign(
         {
-          userId: user.id,
-          email: user.email,
-          username: user.username,
+          id: user.id,
         },
         `${process.env.JWT_SECRET}`,
         {
@@ -45,8 +25,8 @@ module.exports = {
         }
       );
       return {
-        userId: user.id,
-        username: user.username,
+        id: user.id,
+        name: user.name,
         token: token,
         tokenexpiration: 1,
       };

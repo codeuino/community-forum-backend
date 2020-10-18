@@ -1,78 +1,150 @@
 const { buildSchema } = require("graphql");
 
 module.exports = buildSchema(`
-type user {
-  _id: String!
-  username: String!
-  email: String!
+type userName {
+  firstName: String!
+  lastName: String!
+}
+
+type userSocialMedia {
+  youtube: String
+  facebook: String
+  twitter: String
+  github: String
+  linkedin: String
+}
+
+type userInfo {
+  about: userAbout!
   avatarUrl: String
 }
 
-input UserInput {
+type userAbout {
+  shortDescription: String!
+  designation: String
+}
+
+type user {
+  _id: String!
+  name: userName
+  email: String!
+  phone: String
+  socialMedia: userSocialMedia
+  info: userInfo!
+  isFirstAdmin: Boolean!
+  isAdmin: Boolean!
+  isModerator: Boolean!
+  isActivated: Boolean!
+  isRemoved: Boolean!
+}
+
+input userNameInput {
+  firstName: String!
+  lastName: String!
+}
+
+input userSocialMediaInput {
+  youtube: String
+  facebook: String
+  twitter: String
+  github: String
+  linkedin: String
+}
+
+input userInfoInput {
+  about: userAboutInput!
+  avatarUrl: String
+}
+
+input userAboutInput {
+  shortDescription: String!
+  designation: String
+}
+
+input userInput {
+  name: userNameInput!
   email: String!
   password: String!
-  username: String!
+  phone: String
+  socialMedia: userSocialMediaInput
+  info: userInfoInput!
 }
 
-type category {
+input userFindInput {
+  _id: String
+  email: String
+}
+
+type organizationDescription {
+  shortDescription: String!
+  longDescription: String
+}
+
+type organizationInfo {
+  email: String!
+  website: String!
+}
+
+type organization {
   _id: String!
-  categoryName: String!
-  topicIds: [String!]!
+  name: String!
+  description: organizationDescription!
+  contactInfo: organizationInfo!
+  isArchived: Boolean!
+  isUnderMaintenance: Boolean!
+  totalUsers: Int!
 }
 
-input CategoryInput{
-  categoryName: String!
+input organizationDescriptionInput {
+  shortDescription: String!
+  longDescription: String
 }
 
-type message {
-  _id: String!
-  userId: String!
-  replyTo: String
-  description: String!
-  likes: Int!
+input organizationInfoInput {
+  email: String!
+  website: String!
 }
 
-type topic{
-  _id: String!
-  topicName: String!
-  topicDescription: String
-  topicTags: [String!]!
-  chats: [message!]!
+input organizationInput {
+  name: String!
+  description: organizationDescriptionInput!
+  contactInfo: organizationInfoInput!
 }
 
-input messageInput {
-  userId: String!
-  replyTo: String
-  description: String!
-  likes: Int
+type adminModeratorsData {
+  admins: [user!]!
+  moderators: [user!]!
 }
 
-input TopicInput{
-  topicName: String!
-  topicDescription: String!
-  topicTags: [String!]
-  categoryId: String!
-  chats: [messageInput!]
+type authData {
+  _id: String!,
+  name: String!
+  token: String!
+  tokenexpiration: Int!
 }
 
-type AuthData {
-  userId: String!,
-  username: String!
-  token: String!,
-  tokenexpiration: Int!,
+type resultData {
+  result: String!,
 }
 
 type RootQuery {
-  topics: [topic!]!
-  categories: [category!]!
-  messages(topicId: String!): [message!]!
-  login(email: String!, password: String!): AuthData!
+  users: [user!]!
+  getOrganization: organization!
+  getAdminModerators: adminModeratorsData!
+  login(email: String!, password: String!): authData!
 }
 
 type RootMutation {
-  createTopics(topicInput:TopicInput) : topic
-  createCategories(categoryInput: CategoryInput): category
-  createUser(userInput: UserInput): user
+  createUser(userInput: userInput): user
+  updateUser(userInput: userInput): user
+  blockUser(userFindInput: userFindInput): resultData
+  removeUser(userFindInput: userFindInput): resultData
+  createOrganization(organizationInput: organizationInput): resultData
+  updateOrganization(organizationInput: organizationInput): organization
+  makeAdmin(userFindInput: userFindInput): resultData
+  makeModerator(userFindInput: userFindInput): resultData
+  removeAdmin(userFindInput: userFindInput): resultData
+  removeModerator(userFindInput: userFindInput): resultData
 }
 
 schema {
