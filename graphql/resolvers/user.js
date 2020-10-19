@@ -16,7 +16,7 @@ const {
 } = require("../variables/resultMessages");
 
 module.exports = {
-  users: async (req) => {
+  users: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
@@ -84,34 +84,31 @@ module.exports = {
     }
   },
 
-  updateUser: async (req, args) => {
+  updateUser: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
     try {
-      const user = await User.updateOne(
-        { id: req.currentUser.id },
+      let user = await User.updateOne(
+        { _id: req.currentUser.id },
         {
           $set: {
-            name: {
-              firstName: args.userInput.firstName,
-              lastName: args.userInput.lastName,
-            },
-            email: args.userInput.email,
-            password: args.userInput.password,
+            name: args.userInput.name,
             phone: args.userInput.phone,
             info: args.userInput.info,
           },
         }
       );
-      return { ...user._doc };
+
+      user = await User.findById(req.currentUser.id).lean();
+      return user
     } catch (err) {
       console.log(err);
       throw err;
     }
   },
 
-  blockUser: async (req, args) => {
+  blockUser: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
@@ -144,7 +141,7 @@ module.exports = {
     }
   },
 
-  removeUser: async (req, args) => {
+  removeUser: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
@@ -161,17 +158,18 @@ module.exports = {
         }
         user.isRemoved = true;
         await user.save();
-        organization.totalUser -= 1;
+        organization.totalUsers -= 1;
         if (user.isAdmin) {
           organization.adminIds = organization.adminIds.filter(
-            (adminId) => adminId.toString() !== user.id
+            (adminId) => adminId.toString() != user.id
           );
         }
         if (user.isModerator) {
           organization.moderatorIds = organization.moderatorIds.filter(
-            (moderatorId) => moderatorId.toString() !== user.id
+            (moderatorId) => moderatorId.toString() != user.id
           );
         }
+        organization.removedUsers.push(user);
         await organization.save();
         return { result: userRemoveResult };
       } else {
@@ -189,17 +187,18 @@ module.exports = {
         if (req.currentUser.isAdmin) {
           user.isRemoved = true;
           await user.save();
-          organization.totalUser -= 1;
+          organization.totalUsers -= 1;
           if (user.isAdmin) {
             organization.adminIds = organization.adminIds.filter(
-              (adminId) => adminId.toString() !== user.id
+              (adminId) => adminId.toString() != user.id
             );
           }
           if (user.isModerator) {
             organization.moderatorIds = organization.moderatorIds.filter(
-              (moderatorId) => moderatorId.toString() !== user.id
+              (moderatorId) => moderatorId.toString() != user.id
             );
           }
+          organization.removedUsers.push(user);
           await organization.save();
           return { result: userRemoveResult };
         } else {
@@ -212,13 +211,13 @@ module.exports = {
     }
   },
 
-  getSelfCategories: async (req) => {
+  getSelfCategories: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
     try {
-      const user = (await User.findById(req.currentUser.id)).populate(
-        "categoriesCreated"
+      const user = await User.findById(req.currentUser.id).populate(
+        "categoriesCreated", "_id name description"
       );
       return user.categoriesCreated;
     } catch (err) {
@@ -227,13 +226,13 @@ module.exports = {
     }
   },
 
-  getSelfTopics: async (req) => {
+  getSelfTopics: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
     try {
-      const user = (await User.findById(req.currentUser.id)).populate(
-        "topicsCreated"
+      const user = await User.findById(req.currentUser.id).populate(
+        "topicsCreated", "_id name description"
       );
       return user.topicsCreated;
     } catch (err) {

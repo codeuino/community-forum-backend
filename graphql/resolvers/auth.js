@@ -25,7 +25,7 @@ module.exports = {
         }
       );
       return {
-        id: user.id,
+        _id: user._id,
         name: user.name,
         token: token,
       };

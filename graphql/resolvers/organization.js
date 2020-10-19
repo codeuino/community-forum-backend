@@ -163,7 +163,7 @@ module.exports = {
         await user.save();
         const organization = await Organization.findOne({});
         organization.adminIds = organization.adminIds.filter(
-          (adminId) => adminId.toString() !== user.id
+          (adminId) => adminId.toString() != user.id
         );
         await organization.save();
         return { result: removeAdminResult };
@@ -198,7 +198,7 @@ module.exports = {
         await user.save();
         const organization = await Organization.findOne({});
         organization.moderatorIds = organization.moderatorIds.filter(
-          (moderatorId) => moderatorId.toString() !== user.id
+          (moderatorId) => moderatorId.toString() != user.id
         );
         await organization.save();
         return {

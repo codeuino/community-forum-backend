@@ -16,7 +16,9 @@ module.exports.noOrganizationError = "Organization to be created first";
 module.exports.organizationExistError = "Organization can be created only once";
 
 //categories
+module.exports.categoryArchivedError = "Category had been archived";
 module.exports.categoryRemovedError = "Category had been deleted";
 
 //topics
+module.exports.topicArchivedError = "Topic had been archived";
 module.exports.topicRemovedError = "Topic had been deleted";

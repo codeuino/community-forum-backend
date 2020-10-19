@@ -1,6 +1,7 @@
 const User = require("../../models/user");
 const Category = require("../../models/category");
-const topic = require("../../models/topic");
+const Topic = require("../../models/topic");
+const Message = require("../../models/message");
 const {
   authenticationError,
   categoryRemovedError,
@@ -16,16 +17,14 @@ module.exports = {
   categories: async () => {
     try {
       let categories = await Category.find({}).lean();
-      return categories.map((category) => {
-        return { ...category._doc };
-      });
+      return categories
     } catch (err) {
       console.log(err);
       throw err;
     }
   },
 
-  createCategory: async (req, args) => {
+  createCategory: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
@@ -34,9 +33,9 @@ module.exports = {
     }
     try {
       let category = new Category({
-        name: args.categoryInput.categoryName,
+        name: args.categoryInput.name,
         description: args.categoryInput.description,
-        createdBy: req.currentUser,
+        createdBy: req.currentUser.id,
       });
       const saveCategory = await category.save();
       const user = await User.findById(req.currentUser.id);
@@ -64,7 +63,7 @@ module.exports = {
     }
   },
 
-  archiveCategory: async (req, args) => {
+  archiveCategory: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
@@ -74,10 +73,10 @@ module.exports = {
     try {
       const category = await Category.findById(args.categoryFindInput._id);
       if (
-        category.createdBy.toString() === req.currentUser.id ||
+        category.createdBy.toString() == req.currentUser.id ||
         req.currentUser.isModerator
       ) {
-        category[isArchived] = true;
+        category.isArchived = true;
         await Topic.updateMany({parentCategory: args.categoryFindInput._id}, {isArchived: true});
         await category.save();
         return { result: categoryArchiveResult };
@@ -89,7 +88,7 @@ module.exports = {
     }
   },
 
-  updateCategory: async (req, args) => {
+  updateCategory: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
@@ -99,11 +98,11 @@ module.exports = {
     try {
       const category = await Category.findById(args.categoryInput._id);
       if (
-        category.createdBy.toString() === req.currentUser.id ||
+        category.createdBy.toString() == req.currentUser.id ||
         req.currentUser.isModerator
       ) {
-        category[name] = args.categoryInput.name;
-        category[description] = args.categoryInput.description;
+        category.name = args.categoryInput.name;
+        category.description = args.categoryInput.description;
         const updateCategory = await category.save();
         return { ...updateCategory._doc };
       }
@@ -114,7 +113,7 @@ module.exports = {
     }
   },
 
-  deleteCategory: async (req, args) => {
+  deleteCategory: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
@@ -124,15 +123,15 @@ module.exports = {
     try {
       const category = await Category.findById(args.categoryFindInput._id);
       if(
-        category.createdBy.toString() === req.currentUser.id || 
+        category.createdBy.toString() == req.currentUser.id || 
         req.currentUser.isModerator
       ) {
         await Topic.deleteMany({parentCategory: args.categoryFindInput._id});
         await Message.deleteMany({parentCategory: args.categoryFindInput._id});
         await category.remove();
         const user = await User.findById(req.currentUser.id);
-        user.categoriesCreated.filter(
-          (categoryId) => categoryId.toString() !== args.categoryFindInput._id
+        user.categoriesCreated = user.categoriesCreated.filter(
+          (categoryId) => categoryId.toString() != args.categoryFindInput._id
         );
         await user.save();
         return {

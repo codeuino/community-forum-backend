@@ -123,7 +123,7 @@ const userSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  catgoriesCreated: {
+  categoriesCreated: {
     type: [
       {
         type: Schema.Types.ObjectId,

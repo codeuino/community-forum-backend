@@ -11,9 +11,10 @@ type topic {
 }
 
 input topicInput {
+  _id: String
   name: String!
   description: String!
-  parentCategory: String!
+  parentCategory: String
   tags: [String!]
 }
 

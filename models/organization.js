@@ -93,7 +93,7 @@ const orgSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User",
       },
-    ]
+    ],
   },
   moderatorIds: {
     type: [
@@ -101,7 +101,7 @@ const orgSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User",
       },
-    ]
+    ],
   },
   isArchived: {
     type: Boolean,
@@ -112,6 +112,12 @@ const orgSchema = new Schema({
     default: false,
   },
   blockedUsers: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+  removedUsers: [
     {
       type: Schema.Types.ObjectId,
       ref: "User",

@@ -9,6 +9,7 @@ type category {
 }
 
 input categoryInput {
+  _id: String
   name: String!
   description: String!
 }

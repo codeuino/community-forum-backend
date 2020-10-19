@@ -42,11 +42,11 @@ type RootMutation {
   removeModerator(userFindInput: userFindInput!): resultData!
   createCategory(categoryInput: categoryInput!): category!
   archiveCategory(categoryFindInput: categoryFindInput!): resultData!
-  updateCategory(categoryFindInput: categoryFindInput!): category!
+  updateCategory(categoryInput: categoryInput!): category!
   deleteCategory(categoryFindInput: categoryFindInput!): resultData!
   createTopic(topicInput: topicInput!): topic!
   archiveTopic(topicFindInput: topicFindInput!): resultData!
-  updateTopic(topicFindInput: topicFindInput!): topic!
+  updateTopic(topicInput: topicInput!): topic!
   deleteTopic(topicFindInput: topicFindInput!): resultData!
 }
 

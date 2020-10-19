@@ -61,8 +61,8 @@ input userAboutInput {
 
 input userInput {
   name: userNameInput!
-  email: String!
-  password: String!
+  email: String
+  password: String
   phone: String
   socialMedia: userSocialMediaInput
   info: userInfoInput!
@@ -74,7 +74,7 @@ input userFindInput {
 }
 
 type authData {
-  _id: String!,
+  _id: String!
   name: userName!
   token: String!
 }
