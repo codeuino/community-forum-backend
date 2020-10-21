@@ -20,3 +20,10 @@ module.exports.categoryArchiveResult = "Category archived successfully";
 //topics
 module.exports.topicDeleteResult = "Topic removed successfully";
 module.exports.topicArchiveResult = "Topic archived successfully";
+
+//messages
+module.exports.messageDeleteResult = "Message removed successfully";
+module.exports.messageAnnouncementResult = "Announcement created successfully";
+module.exports.removeAnnouncementResult = "Announcement removed successfully";
+module.exports.pinMessageResult = "Message pinned successfully";
+module.exports.unpinMessageResult = "Message unpinned successfully";

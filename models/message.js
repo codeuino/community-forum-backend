@@ -7,8 +7,8 @@ const messageSchema = new Schema({
     ref: "User",
   },
   replyTo: {
-    type: String,
-    default: null,
+    type: Schema.Types.ObjectId,
+    ref: "User",
   },
   description: {
     type: String,
@@ -22,10 +22,6 @@ const messageSchema = new Schema({
   parentTopic: {
     type: Schema.Types.ObjectId,
     ref: "Topic",
-  },
-  parentCategory: {
-    type: Schema.Types.ObjectId,
-    ref: "Category",
   },
   createdAt: {
     type: Date,

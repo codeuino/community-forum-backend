@@ -48,6 +48,13 @@ type RootMutation {
   archiveTopic(topicFindInput: topicFindInput!): resultData!
   updateTopic(topicInput: topicInput!): topic!
   deleteTopic(topicFindInput: topicFindInput!): resultData!
+  createMessage(messageInput: messageInput!): message!
+  updateMessage(messageInput: messageInput!): message!
+  deleteMessage(messageFindInput: messageFindInput!): resultData!
+  pinMessage(messageFindInput: messageFindInput!): resultData!
+  unpinMessage(messageFindInput: messageFindInput!): resultData!
+  announceMessage(messageFindInput: messageFindInput!): resultData!
+  removeAnnouncement(messageFindInput: messageFindInput!): resultData!
 }
 
 schema {

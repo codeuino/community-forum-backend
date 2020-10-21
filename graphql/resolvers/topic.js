@@ -156,7 +156,7 @@ module.exports = {
       }
       topic.chats = topic.chats.map(
         (chat) => {
-          let user = User.findById(chat.userId, "name info");
+          let user = User.findById(chat.userId, "_id name");
           chat.user = user;
           return chat;
         }
