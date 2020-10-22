@@ -26,7 +26,7 @@ type RootQuery {
   categories: [category!]!
   getCategoryTopics(categoryFindInput: categoryFindInput!): [topic!]!
   topics: [topic!]!
-  getChats(topicFindInput: topicFindInput!): [message!]!
+  getTopicChats(topicFindInput: topicFindInput!): [message!]!
 }
 
 type RootMutation {

@@ -6,6 +6,13 @@ const {
   authenticationError,
   noAuthorizationError,
 } = require("../graphql/variables/errorMessages");
+const {
+  testCreateOrganization,
+  testCreateUser,
+  testLoginUser,
+  testCreateCategory,
+  testCreateTopic,
+} = require("../config/testVariables");
 const app = require("../app").app;
 const supertest = require("supertest");
 const request = supertest(app);
@@ -31,65 +38,9 @@ beforeAll(async (done) => {
   await User.deleteMany({});
   await Category.deleteMany({});
   await Topic.deleteMany({});
-  organizationResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createOrganization(organizationInput: {
-          name: "Test Organization"
-          description: {
-            shortDescription: "Lorem Ipsum"
-          }
-          contactInfo: {
-            email: "test@email.com"
-            website: "www.website.com"
-          }
-      }) {
-        result
-      }}`,
-    })
-    .set("Accept", "application/json");
-  firstUserSignupResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createUser(userInput: {
-          name: {
-            firstName: "TestUser"
-            lastName: "1"
-          }
-          email: "abc1@email.com"
-          password: "password"
-          info: {
-            about: {
-              shortDescription: "Lorem Ipsum"
-            }
-          }
-      }) {
-        _id
-        name {
-          firstName
-          lastName
-        }
-        email
-        phone
-        isAdmin
-      }}`,
-    })
-    .set("Accept", "application/json");
-  firstUserLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc1@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  organizationResponse = await testCreateOrganization();
+  firstUserSignupResponse = await testCreateUser(1);
+  firstUserLoginResponse = await testLoginUser(1);
   firstUserToken = firstUserLoginResponse.body.data.login.token;
   await done();
 });
@@ -100,45 +51,14 @@ afterAll(async () => {
 });
 
 test("should not create a new category when user logged out", async () => {
-  const response = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createCategory(
-        categoryInput: {
-          name: "Test Category"
-          description: "Lorem Ipsum"
-        }
-      ) {
-        _id
-        name
-        description
-        createdBy
-      }}`,
-    })
-    .set("Accept", "application/json")
+  const response = await testCreateCategory();
   expect(response.type).toBe("application/json");
   expect(response.status).toBe(500);
   expect(response.body.errors[0].message).toBe(authenticationError);
 });
 
 test("should create a new category when user logged in", async () => {
-  const response = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createCategory(
-        categoryInput: {
-          name: "Test Category"
-          description: "Lorem Ipsum"
-        }
-      ) {
-        _id
-        name
-        description
-        createdBy
-      }}`,
-    })
-    .set("Accept", "application/json")
-    .set("Authorization", `Bearer ${firstUserToken}`);
+  const response = await testCreateCategory(firstUserToken);
   categoryId = response.body.data.createCategory._id;
   expect(response.type).toBe("application/json");
   expect(response.status).toBe(200);
@@ -169,25 +89,7 @@ test("get all categories", async () => {
 });
 
 test("get topics of a particular category", async () => {
-  const topicCreationResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createTopic(
-        topicInput: {
-          name: "Test Topic"
-          description: "Lorem Ipsum"
-          parentCategory: "${categoryId}"
-        }
-      ) {
-        _id
-        name
-        description
-        createdBy
-        parentCategory
-      }}`,
-    })
-    .set("Accept", "application/json")
-    .set("Authorization", `Bearer ${firstUserToken}`);
+  const topicCreationResponse = await testCreateTopic(firstUserToken, categoryId);
   const response = await request
     .post("/graphql")
     .send({
@@ -208,45 +110,9 @@ test("get topics of a particular category", async () => {
 });
 
 test("should not archive a category by any third user", async () => {
-  const userSignupResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createUser(userInput: {
-        name: {
-          firstName: "TestUser"
-          lastName: "2"
-        }
-        email: "abc2@email.com"
-        password: "password"
-        info: {
-          about: {
-            shortDescription: "Lorem Ipsum"
-          }
-        }
-    }) {
-      _id
-      name {
-        firstName
-        lastName
-      }
-      email
-      phone
-      isAdmin
-    }}`,
-    })
-    .set("Accept", "application/json");
+  const userSignupResponse = await testCreateUser(2);
   expect(userSignupResponse.body.data.createUser.isAdmin).toBe(false);
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-      email: "abc2@email.com"
-      password: "password"
-    ) {
-      token
-    } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(2);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")

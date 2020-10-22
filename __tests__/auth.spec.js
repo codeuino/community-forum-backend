@@ -1,3 +1,8 @@
+const {
+  testCreateOrganization,
+  testCreateUser,
+  testLoginUser,
+} = require("../config/testVariables");
 const app = require("../app").app;
 const supertest = require("supertest");
 const request = supertest(app);
@@ -14,49 +19,8 @@ beforeAll(async (done) => {
   console.log(`Test: listening on ${process.env.PORT}`);
   await User.deleteMany({});
   await Organization.deleteMany({});
-  const organizationResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createOrganization(organizationInput: {
-          name: "Test Organization"
-          description: {
-            shortDescription: "Lorem Ipsum"
-          }
-          contactInfo: {
-            email: "test@email.com"
-            website: "www.website.com"
-          }
-      }) {
-        result
-      }}`,
-    })
-    .set("Accept", "application/json");
-  const userResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createUser(userInput: {
-          name: {
-            firstName: "TestUser"
-            lastName: "1"
-          }
-          email: "abc@email.com"
-          password: "password"
-          info: {
-            about: {
-              shortDescription: "Lorem Ipsum"
-            }
-          }
-      }) {
-        _id
-        name {
-          firstName
-          lastName
-        }
-        email
-        phone
-      }}`,
-    })
-    .set("Accept", "application/json");
+  const organizationResponse = await testCreateOrganization();
+  const userResponse = await testCreateUser(1);
   userId = userResponse.body.data.createUser._id;
   await done();
 });
@@ -67,21 +31,7 @@ afterAll(async () => {
 });
 
 test("login existing user", async () => {
-  const response = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  const response = await testLoginUser(1);
   expect(response.type).toBe("application/json");
   expect(response.status).toBe(200);
   expect(response.body.data.login.name).toStrictEqual({
