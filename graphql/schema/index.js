@@ -4,13 +4,16 @@ const organizationSchema = require("./organization");
 const categorySchema = require("./category");
 const topicSchema = require("./topic");
 const messageSchema = require("./message");
+const taskSchema = require("./task");
 
 module.exports = buildSchema(`
+scalar Date
 ${userSchema}
 ${organizationSchema}
 ${categorySchema}
 ${topicSchema}
 ${messageSchema}
+${taskSchema}
 
 type resultData {
   result: String!,
@@ -21,12 +24,16 @@ type RootQuery {
   login(email: String!, password: String!): authData!
   getSelfCategories: [category!]!
   getSelfTopics: [topic!]!
+  getAssignedTasks: [task!]!
+  getCreatedTasks: [task!]!
   getOrganization: organization!
   getAdminModerators: adminModeratorsData!
   categories: [category!]!
   getCategoryTopics(categoryFindInput: categoryFindInput!): [topic!]!
   topics: [topic!]!
   getTopicChats(topicFindInput: topicFindInput!): [message!]!
+  getTask(taskFindInput: taskFindInput!): task!
+  getTopicTasks(topicFindInput: topicFindInput!): [task!]!
 }
 
 type RootMutation {
@@ -55,6 +62,10 @@ type RootMutation {
   unpinMessage(messageFindInput: messageFindInput!): resultData!
   announceMessage(messageFindInput: messageFindInput!): resultData!
   removeAnnouncement(messageFindInput: messageFindInput!): resultData!
+  createTask(taskInput: taskInput!): task!
+  updateTask(taskInput: taskInput!): task!
+  deleteTask(taskFindInput: taskFindInput!): resultData!
+  completeTask(taskFindInput: taskFindInput!): resultData!
 }
 
 schema {

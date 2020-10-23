@@ -27,3 +27,7 @@ module.exports.messageAnnouncementResult = "Announcement created successfully";
 module.exports.removeAnnouncementResult = "Announcement removed successfully";
 module.exports.pinMessageResult = "Message pinned successfully";
 module.exports.unpinMessageResult = "Message unpinned successfully";
+
+//tasks
+module.exports.taskDeleteResult = "Task removed successfully";
+module.exports.taskCompleteResult = "Task completed successfully";

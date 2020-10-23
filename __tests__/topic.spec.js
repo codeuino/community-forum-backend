@@ -13,6 +13,7 @@ const {
   testCreateCategory,
   testCreateTopic,
   testCreateMessage,
+  testCreateTask,
 } = require("../config/testVariables");
 const app = require("../app").app;
 const supertest = require("supertest");
@@ -23,6 +24,7 @@ const User = require("../models/user");
 const Category = require("../models/category");
 const Topic = require("../models/topic");
 const Message = require("../models/message");
+const Task = require("../models/task");
 const server = require("../app").server;
 const jwt = require("jsonwebtoken");
 const { response } = require("express");
@@ -33,7 +35,8 @@ let connection,
   firstUserLoginResponse, 
   firstUserToken, 
   categoryResponse, 
-  topicId;
+  topicId,
+  messageId;
 
 beforeAll(async (done) => {
   connection = await server.listen(process.env.PORT);
@@ -43,6 +46,7 @@ beforeAll(async (done) => {
   await Category.deleteMany({});
   await Topic.deleteMany({});
   await Message.deleteMany({});
+  await Task.deleteMany({});
   organizationResponse = await testCreateOrganization();
   firstUserSignupResponse = await testCreateUser(1);
   firstUserLoginResponse = await testLoginUser(1);
@@ -200,7 +204,8 @@ test("should get all messages in a particular topic", async () => {
     firstUserToken,
     topicCreationResponse.body.data.createTopic._id
   );
-  const messageId = messageCreationResponse.body.data.createMessage._id;
+  topicId = topicCreationResponse.body.data.createTopic._id;
+  messageId = messageCreationResponse.body.data.createMessage._id;
   const response = await request
     .post("/graphql")
     .send({
@@ -229,4 +234,31 @@ test("should get all messages in a particular topic", async () => {
   expect(response.body.data.getTopicChats[0].user.name.firstName).toEqual("TestUser");
   expect(response.body.data.getTopicChats[0].user._id)
     .toEqual(firstUserSignupResponse.body.data.createUser._id);
+});
+
+test("should get all tasks in a particular topic", async () => {
+  const taskCreationResponse = await testCreateTask(
+    firstUserToken,
+    topicId,
+    messageId
+  );
+  const response = await request
+    .post("/graphql")
+    .send({
+      query: `{ getTopicTasks(
+        topicFindInput: {
+          _id: "${topicId}"
+        }
+      ) {
+        _id
+        description
+        parentTopic
+      }}`,
+    })
+    .set("Accept", "application/json")
+  expect(response.type).toBe("application/json");
+  expect(response.status).toBe(200);
+  expect(response.body.data.getTopicTasks.length).toBe(1);
+  expect(response.body.data.getTopicTasks[0].description).toBe("Lorem Ipsum");
+  expect(response.body.data.getTopicTasks[0].parentTopic).toEqual(topicId);
 });

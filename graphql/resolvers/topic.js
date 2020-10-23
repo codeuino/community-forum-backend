@@ -33,7 +33,9 @@ module.exports = {
       throw new Error(blockRemoveUserError);
     }
     try {
-      const category = await Category.findById(args.topicInput.parentCategory).lean();
+      const category = await Category.findById(
+        args.topicInput.parentCategory
+      ).lean();
       if (category.isArchived == false) {
         let topic = new Topic({
           name: args.topicInput.name,
@@ -52,8 +54,7 @@ module.exports = {
         user.topicsCreated.push(topic);
         await user.save();
         return { ...saveTopic._doc };
-      }
-      else {
+      } else {
         throw new Error(categoryArchivedError);
       }
     } catch (err) {
@@ -88,7 +89,7 @@ module.exports = {
     }
   },
 
-  deleteTopic:  async (args, req) => {
+  deleteTopic: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
@@ -102,7 +103,7 @@ module.exports = {
         req.currentUser.isModerator
       ) {
         await topic.remove();
-        await Message.deleteMany({parentTopic: args.topicFindInput._id});
+        await Message.deleteMany({ parentTopic: args.topicFindInput._id });
         const user = await User.findById(req.currentUser.id);
         user.topicsCreated = user.topicsCreated.filter(
           (topicId) => topicId.toString() != args.topicFindInput._id
@@ -148,20 +149,44 @@ module.exports = {
 
   getTopicChats: async (args) => {
     try {
-      const topic = await Topic.findById(
-        args.topicFindInput._id
-      ).populate("chats");
+      const topic = await Topic.findById(args.topicFindInput._id).populate(
+        "chats"
+      );
       if (!topic) {
         throw new Error(topicRemovedError);
       }
-      topic.chats = topic.chats.map(
-        (chat) => {
-          let user = User.findById(chat.userId, "_id name");
-          chat.user = user;
-          return chat;
-        }
-      );
+      topic.chats = topic.chats.map((chat) => {
+        let user = User.findById(chat.userId, "_id name");
+        chat.user = user;
+        return chat;
+      });
       return topic.chats;
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  },
+
+  getTopicTasks: async (args) => {
+    try {
+      const topic = await Topic.findById(args.topicFindInput._id).populate(
+        "tasks"
+      ).lean();
+      if (!topic) {
+        throw new Error(topicRemovedError);
+      }
+      topic.tasks = topic.tasks.filter((task) => {
+        return !task.isCompleted;
+      })
+      topic.tasks = topic.tasks.map(async (task) => {
+        if(task.attachedMessage != undefined) {
+          const message = await Message.findById(task.attachedMessage).lean();
+          task.description = message.description;
+          task.parentTopic = message.parentTopic;
+        }
+        return task;
+      });
+      return topic.tasks;
     } catch (err) {
       console.log(err);
       throw err;

@@ -12,6 +12,8 @@ const {
   testLoginUser,
   testCreateCategory,
   testCreateTopic,
+  testCreateMessage,
+  testCreateTask,
 } = require("../config/testVariables");
 const app = require("../app").app;
 const supertest = require("supertest");
@@ -19,18 +21,31 @@ const request = supertest(app);
 const mongoose = require("mongoose");
 const Organization = require("../models/organization");
 const User = require("../models/user");
+const Category = require("../models/category");
+const Topic = require("../models/topic");
+const Message = require("../models/message");
+const Task = require("../models/task");
 const server = require("../app").server;
 const jwt = require("jsonwebtoken");
 
-let connection, userId, firstUserLoginResponse, firstUserToken;
+let connection, 
+  userId,
+  secondUserId,
+  firstUserLoginResponse, 
+  firstUserToken,
+  categoryId,
+  topicId,
+  messageId;
 
 beforeAll(async (done) => {
   connection = await server.listen(process.env.PORT);
   console.log(`Test: listening on ${process.env.PORT}`);
   await User.deleteMany({});
   await Organization.deleteMany({});
-  const Category = require("../models/category");
-  const Topic = require("../models/topic");
+  await Category.deleteMany({});
+  await Topic.deleteMany({});
+  await Message.deleteMany({});
+  await Task.deleteMany({});
   const organizationResponse = await testCreateOrganization();
   await done();
 });
@@ -140,6 +155,7 @@ test("should update user details if logged in", async () => {
 
 test("admin should be able to block other users", async () => {
   const userCreationResponse = await testCreateUser(2);
+  secondUserId = userCreationResponse.body.data.createUser._id;
   const response = await request
     .post("/graphql")
     .send({
@@ -179,7 +195,7 @@ test("admin should be able to remove other users", async () => {
   expect(organization.totalUsers).toBe(1);
 });
 
-test("current user should be able to himself", async () => {
+test("current user should be able to remove himself", async () => {
   const userCreationResponse = await testCreateUser(3);
   const userLoginResponse = await testLoginUser(3);
   const token = userLoginResponse.body.data.login.token;
@@ -203,7 +219,7 @@ test("current user should be able to himself", async () => {
 
 test("current user should be able to get categories created by him", async () => {
   const categoryCreationResponse = await testCreateCategory(firstUserToken);
-  const categoryId = categoryCreationResponse.body.data.createCategory._id;
+  categoryId = categoryCreationResponse.body.data.createCategory._id;
   const response = await request
     .post("/graphql")
     .send({
@@ -221,9 +237,8 @@ test("current user should be able to get categories created by him", async () =>
 });
 
 test("current user should be able to get topics created by him", async () => {
-  const categoryCreationResponse = await testCreateCategory(firstUserToken);
-  const categoryId = categoryCreationResponse.body.data.createCategory._id;
   const topicCreationResponse = await testCreateTopic(firstUserToken, categoryId);
+  topicId = topicCreationResponse.body.data.createTopic._id;
   const response = await request
     .post("/graphql")
     .send({
@@ -238,4 +253,51 @@ test("current user should be able to get topics created by him", async () => {
   expect(response.status).toBe(200);
   expect(response.body.data.getSelfTopics.length).toBe(1);
   expect(response.body.data.getSelfTopics[0].name).toBe("Test Topic");
+});
+
+test("current user should be able to get tasks created by him", async () => {
+  const taskCreationResponse = await testCreateTask(
+    firstUserToken,
+    topicId,
+  );
+  const response = await request
+    .post("/graphql")
+    .send({
+      query: `{ getCreatedTasks {
+      _id
+      description
+    }}`,
+    })
+    .set("Accept", "application/json")
+    .set("Authorization", `Bearer ${firstUserToken}`);
+  expect(response.type).toBe("application/json");
+  expect(response.status).toBe(200);
+  expect(response.body.data.getCreatedTasks.length).toBe(1);
+  expect(response.body.data.getCreatedTasks[0].description).toBe("Lorem Ipsum");
+});
+
+test("current user should be able to get tasks assigned to him", async () => {
+  const secondUserLoginResponse = await testLoginUser(2);
+  const taskCreationResponse = await testCreateTask(
+    firstUserToken, 
+    topicId,
+    undefined,
+    secondUserId,
+  );
+  const response = await request
+    .post("/graphql")
+    .send({
+      query: `{ getAssignedTasks {
+      _id
+      description
+      userId
+    }}`,
+    })
+    .set("Accept", "application/json")
+    .set("Authorization", `Bearer ${secondUserLoginResponse.body.data.login.token}`);
+  expect(response.type).toBe("application/json");
+  expect(response.status).toBe(200);
+  expect(response.body.data.getAssignedTasks.length).toBe(1);
+  expect(response.body.data.getAssignedTasks[0].description).toBe("Lorem Ipsum");
+  expect(response.body.data.getAssignedTasks[0].userId).toBe(userId);
 });

@@ -1,5 +1,4 @@
 const app = require("../app").app;
-const { response } = require("express");
 const supertest = require("supertest");
 const request = supertest(app);
 
@@ -132,6 +131,108 @@ module.exports = {
       })
       .set("Accept", "application/json")
       .set("Authorization", `Bearer ${token}`);
-      return response;
+    return response;
+  },
+  testCreateTask: async (
+    token,
+    topicId,
+    messageId = undefined,
+    assignedTo = undefined
+  ) => {
+    let response;
+    if (messageId == undefined) {
+      if (assignedTo == undefined) {
+        response = await request
+          .post("/graphql")
+          .send({
+            query: `mutation{ createTask(
+              taskInput: {
+                description: "Lorem Ipsum"
+                deadline: "2020-02-20T02:20:20Z"
+                parentTopic: "${topicId}"
+              }
+            ) {
+              _id
+              description
+              deadline
+              assignedTo
+              attachedMessage
+              parentTopic
+            }}`,
+          })
+          .set("Accept", "application/json")
+          .set("Authorization", `Bearer ${token}`);
+      } else {
+        response = await request
+          .post("/graphql")
+          .send({
+            query: `mutation{ createTask(
+              taskInput: {
+                description: "Lorem Ipsum"
+                deadline: "2020-02-20T02:20:20Z"
+                assignedTo: "${assignedTo}"
+                parentTopic: "${topicId}"
+              }
+            ) {
+              _id
+              description
+              deadline
+              assignedTo
+              attachedMessage
+              parentTopic
+            }}`,
+          })
+          .set("Accept", "application/json")
+          .set("Authorization", `Bearer ${token}`);
+      }
+    } else {
+      if (assignedTo == undefined) {
+        response = await request
+          .post("/graphql")
+          .send({
+            query: `mutation{ createTask(
+              taskInput: {
+                description: "Lorem Ipsum"
+                deadline: "2020-02-20T02:20:20Z"
+                attachedMessage: "${messageId}"
+                parentTopic: "${topicId}"
+              }
+            ) {
+              _id
+              description
+              deadline
+              assignedTo
+              attachedMessage
+              parentTopic
+            }}`,
+          })
+          .set("Accept", "application/json")
+          .set("Authorization", `Bearer ${token}`);
+      } else {
+        response = await request
+          .post("/graphql")
+          .send({
+            query: `mutation{ createTask(
+              taskInput: {
+                description: "Lorem Ipsum"
+                deadline: "2020-02-20T02:20:20Z"
+                assignedTo: "${assignedTo}"
+                attachedMessage: "${messageId}"
+                parentTopic: "${topicId}"
+              }
+            ) {
+              _id
+              description
+              deadline
+              assignedTo
+              attachedMessage
+              parentTopic
+            }}`,
+          })
+          .set("Accept", "application/json")
+          .set("Authorization", `Bearer ${token}`);
+      }
+    }
+    return response;
   },
 };
