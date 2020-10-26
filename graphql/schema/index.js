@@ -1,127 +1,16 @@
 const { buildSchema } = require("graphql");
+const userSchema = require("./user");
+const organizationSchema = require("./organization");
+const categorySchema = require("./category");
+const topicSchema = require("./topic");
+const messageSchema = require("./message");
 
 module.exports = buildSchema(`
-type userName {
-  firstName: String!
-  lastName: String!
-}
-
-type userSocialMedia {
-  youtube: String
-  facebook: String
-  twitter: String
-  github: String
-  linkedin: String
-}
-
-type userInfo {
-  about: userAbout!
-  avatarUrl: String
-}
-
-type userAbout {
-  shortDescription: String!
-  designation: String
-}
-
-type user {
-  _id: String!
-  name: userName
-  email: String!
-  phone: String
-  socialMedia: userSocialMedia
-  info: userInfo!
-  isFirstAdmin: Boolean!
-  isAdmin: Boolean!
-  isModerator: Boolean!
-  isActivated: Boolean!
-  isRemoved: Boolean!
-}
-
-input userNameInput {
-  firstName: String!
-  lastName: String!
-}
-
-input userSocialMediaInput {
-  youtube: String
-  facebook: String
-  twitter: String
-  github: String
-  linkedin: String
-}
-
-input userInfoInput {
-  about: userAboutInput!
-  avatarUrl: String
-}
-
-input userAboutInput {
-  shortDescription: String!
-  designation: String
-}
-
-input userInput {
-  name: userNameInput!
-  email: String!
-  password: String!
-  phone: String
-  socialMedia: userSocialMediaInput
-  info: userInfoInput!
-}
-
-input userFindInput {
-  _id: String
-  email: String
-}
-
-type organizationDescription {
-  shortDescription: String!
-  longDescription: String
-}
-
-type organizationInfo {
-  email: String!
-  website: String!
-}
-
-type organization {
-  _id: String!
-  name: String!
-  description: organizationDescription!
-  contactInfo: organizationInfo!
-  isArchived: Boolean!
-  isUnderMaintenance: Boolean!
-  totalUsers: Int!
-}
-
-input organizationDescriptionInput {
-  shortDescription: String!
-  longDescription: String
-}
-
-input organizationInfoInput {
-  email: String!
-  website: String!
-}
-
-input organizationInput {
-  name: String!
-  description: organizationDescriptionInput!
-  contactInfo: organizationInfoInput!
-}
-
-type adminModeratorsData {
-  admins: [user!]!
-  moderators: [user!]!
-}
-
-type authData {
-  _id: String!,
-  name: String!
-  token: String!
-  tokenexpiration: Int!
-}
+${userSchema}
+${organizationSchema}
+${categorySchema}
+${topicSchema}
+${messageSchema}
 
 type resultData {
   result: String!,
@@ -129,22 +18,43 @@ type resultData {
 
 type RootQuery {
   users: [user!]!
+  login(email: String!, password: String!): authData!
+  getSelfCategories: [category!]!
+  getSelfTopics: [topic!]!
   getOrganization: organization!
   getAdminModerators: adminModeratorsData!
-  login(email: String!, password: String!): authData!
+  categories: [category!]!
+  getCategoryTopics(categoryFindInput: categoryFindInput!): [topic!]!
+  topics: [topic!]!
+  getChats(topicFindInput: topicFindInput!): [message!]!
 }
 
 type RootMutation {
-  createUser(userInput: userInput): user
-  updateUser(userInput: userInput): user
-  blockUser(userFindInput: userFindInput): resultData
-  removeUser(userFindInput: userFindInput): resultData
-  createOrganization(organizationInput: organizationInput): resultData
-  updateOrganization(organizationInput: organizationInput): organization
-  makeAdmin(userFindInput: userFindInput): resultData
-  makeModerator(userFindInput: userFindInput): resultData
-  removeAdmin(userFindInput: userFindInput): resultData
-  removeModerator(userFindInput: userFindInput): resultData
+  createUser(userInput: userInput!): user!
+  updateUser(userInput: userInput!): user!
+  blockUser(userFindInput: userFindInput!): resultData!
+  removeUser(userFindInput: userFindInput!): resultData!
+  createOrganization(organizationInput: organizationInput!): resultData!
+  updateOrganization(organizationInput: organizationInput!): organization!
+  makeAdmin(userFindInput: userFindInput!): resultData!
+  makeModerator(userFindInput: userFindInput!): resultData!
+  removeAdmin(userFindInput: userFindInput!): resultData!
+  removeModerator(userFindInput: userFindInput!): resultData!
+  createCategory(categoryInput: categoryInput!): category!
+  archiveCategory(categoryFindInput: categoryFindInput!): resultData!
+  updateCategory(categoryInput: categoryInput!): category!
+  deleteCategory(categoryFindInput: categoryFindInput!): resultData!
+  createTopic(topicInput: topicInput!): topic!
+  archiveTopic(topicFindInput: topicFindInput!): resultData!
+  updateTopic(topicInput: topicInput!): topic!
+  deleteTopic(topicFindInput: topicFindInput!): resultData!
+  createMessage(messageInput: messageInput!): message!
+  updateMessage(messageInput: messageInput!): message!
+  deleteMessage(messageFindInput: messageFindInput!): resultData!
+  pinMessage(messageFindInput: messageFindInput!): resultData!
+  unpinMessage(messageFindInput: messageFindInput!): resultData!
+  announceMessage(messageFindInput: messageFindInput!): resultData!
+  removeAnnouncement(messageFindInput: messageFindInput!): resultData!
 }
 
 schema {

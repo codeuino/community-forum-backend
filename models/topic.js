@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+const validator = require("validator");
 
 const topicSchema = new Schema({
   name: {
@@ -20,6 +21,14 @@ const topicSchema = new Schema({
     type: String,
     trim: true,
   },
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
+  parentCategory: {
+    type: Schema.Types.ObjectId,
+    ref: "Category",
+  },
   tags: {
     type: [
       {
@@ -33,13 +42,8 @@ const topicSchema = new Schema({
       {
         type: Schema.Types.ObjectId,
         ref: "Message",
-        required: true,
       },
     ],
-  },
-  isRemoved: {
-    type: Boolean,
-    default: false,
   },
   isArchived: {
     type: Boolean,

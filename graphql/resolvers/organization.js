@@ -6,14 +6,14 @@ const {
   madeAdminResult, 
   madeModeratorResult, 
   removeAdminResult, 
-  removeModeratorResult } = require("./resultMessages");
+  removeModeratorResult } = require("../variables/resultMessages");
 const { authenticationError, 
   adminAccessError, 
   noUserError, 
   organizationExistError, 
   firstAdminDemoteError, 
   noAdminError, 
-  noModeratorError } = require("./errorMessages");
+  noModeratorError } = require("../variables/errorMessages");
 
 module.exports = {
   createOrganization: async (args) => {
@@ -46,14 +46,14 @@ module.exports = {
     }
   },
 
-  updateOrganization: async (req, args) => {
+  updateOrganization: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
     try {
       const organizations = await Organization.find({}).lean();
       if (req.currentUser.isAdmin && organizations.length !== 0) {
-        const organization = await Organization.updateOne(
+        let organization = await Organization.updateOne(
           {},
           {
             $set: {
@@ -63,7 +63,8 @@ module.exports = {
             },
           }
         );
-        return { ...organization._doc };
+        organization = await Organization.findOne({}).lean();
+        return organization;
       } else {
         throw new Error(adminAccessError);
       }
@@ -73,7 +74,7 @@ module.exports = {
     }
   },
 
-  makeAdmin: async (req, args) => {
+  makeAdmin: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
@@ -89,9 +90,10 @@ module.exports = {
           throw new Error(noUserError);
         }
         user.isAdmin = true;
+        user.isModerator = true;
         await user.save();
         const organization = await Organization.findOne({});
-        organization.adminInfo.adminIds.push(user);
+        organization.adminIds.push(user);
         await organization.save();
         return { result: madeAdminResult };
       } else {
@@ -103,7 +105,7 @@ module.exports = {
     }
   },
 
-  makeModerator: async (req, args) => {
+  makeModerator: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
@@ -121,7 +123,7 @@ module.exports = {
         user.isModerator = true;
         await user.save();
         const organization = await Organization.findOne({});
-        organization.moderatorInfo.moderatorIds.push(user);
+        organization.moderatorIds.push(user);
         await organization.save();
         return {
           result: madeModeratorResult,
@@ -135,11 +137,10 @@ module.exports = {
     }
   },
 
-  removeAdmin: async (req, args) => {
+  removeAdmin: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
-    console.log(args.userFindInput);
     try {
       if (req.currentUser.isAdmin) {
         let user;
@@ -161,9 +162,8 @@ module.exports = {
         user.isModerator = false;
         await user.save();
         const organization = await Organization.findOne({});
-        console.log(organization.adminInfo.adminIds);
-        organization.adminInfo.adminIds = organization.adminInfo.adminIds.filter(
-          (adminId) => adminId.toString() !== user.id
+        organization.adminIds = organization.adminIds.filter(
+          (adminId) => adminId.toString() != user.id
         );
         await organization.save();
         return { result: removeAdminResult };
@@ -176,14 +176,14 @@ module.exports = {
     }
   },
 
-  removeModerator: async (req, args) => {
+  removeModerator: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
     try {
       if (req.currentUser.isAdmin) {
         let user;
-        if (args.email) {
+        if (args.userFindInput.email) {
           user = await User.findOne({ email: args.userFindInput.email });
         } else if (args.userFindInput._id) {
           user = await User.findById(args.userFindInput._id);
@@ -197,8 +197,8 @@ module.exports = {
         user.isModerator = false;
         await user.save();
         const organization = await Organization.findOne({});
-        organization.moderatorInfo.moderatorIds = organization.moderatorInfo.moderatorIds.filter(
-          (moderatorId) => moderatorId.toString() !== user.id
+        organization.moderatorIds = organization.moderatorIds.filter(
+          (moderatorId) => moderatorId.toString() != user.id
         );
         await organization.save();
         return {
@@ -213,16 +213,18 @@ module.exports = {
     }
   },
 
-  getAdminModerators: async (req) => {
+  getAdminModerators: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
     try {
       if (req.currentUser.isAdmin) {
-        const organization = await Organization.findOne({}).populate();
+        const organization = await Organization.findOne({})
+          .populate("adminIds", "_id name email isFirstAdmin")
+          .populate("moderatorIds", "_id name email isFirstAdmin");
         return {
-          admins: organization.adminInfo.adminIds,
-          moderators: organization.moderatorInfo.moderatorIds,
+          admins: organization.adminIds,
+          moderators: organization.moderatorIds,
         };
       } else {
         throw new Error(adminAccessError);

@@ -21,14 +21,13 @@ module.exports = {
         `${process.env.JWT_SECRET}`,
         {
           algorithm: "HS256",
-          expiresIn: "1h",
+          expiresIn: "30d",
         }
       );
       return {
-        id: user.id,
+        _id: user._id,
         name: user.name,
         token: token,
-        tokenexpiration: 1,
       };
     } catch (err) {
       console.log(err);

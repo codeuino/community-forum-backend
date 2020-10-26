@@ -31,17 +31,17 @@ const categorySchema = new Schema({
       }
     },
   },
-  topicIds: {
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
+  topics: {
     type: [
       {
         type: Schema.Types.ObjectId,
         ref: "Topic",
       },
     ],
-  },
-  isRemoved: {
-    type: Boolean,
-    default: false,
   },
   isArchived: {
     type: Boolean,

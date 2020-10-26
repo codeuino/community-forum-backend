@@ -15,10 +15,11 @@ module.exports = async (req, res, next) => {
     return next();
   }
   req.isAuth = true;
-  req.userId = decodedToken.userId;
-  const user = await User.findById(decodedToken.userId);
-  delete user[password];
-  user.token = decodedToken;
+  let user = await User.findById(decodedToken.id).lean();
+  let result = delete user.password;
   req.currentUser = user;
+  req.currentUser.id = user._id;
+  delete req.currentUser.password;
+  delete req.currentUser._id;
   next();
 };
