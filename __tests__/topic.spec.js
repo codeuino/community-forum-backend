@@ -6,6 +6,15 @@ const {
   authenticationError,
   noAuthorizationError,
 } = require("../graphql/variables/errorMessages");
+const {
+  testCreateOrganization,
+  testCreateUser,
+  testLoginUser,
+  testCreateCategory,
+  testCreateTopic,
+  testCreateMessage,
+  testCreateTask,
+} = require("../config/testVariables");
 const app = require("../app").app;
 const supertest = require("supertest");
 const request = supertest(app);
@@ -14,10 +23,20 @@ const Organization = require("../models/organization");
 const User = require("../models/user");
 const Category = require("../models/category");
 const Topic = require("../models/topic");
+const Message = require("../models/message");
+const Task = require("../models/task");
 const server = require("../app").server;
 const jwt = require("jsonwebtoken");
+const { response } = require("express");
 
-let connection, organizationResponse, firstUserSignupResponse, firstUserLoginResponse, firstUserToken, categoryResponse, topicId;
+let connection, 
+  organizationResponse, 
+  firstUserSignupResponse, 
+  firstUserLoginResponse, 
+  firstUserToken, 
+  categoryResponse, 
+  topicId,
+  messageId;
 
 beforeAll(async (done) => {
   connection = await server.listen(process.env.PORT);
@@ -26,83 +45,13 @@ beforeAll(async (done) => {
   await User.deleteMany({});
   await Category.deleteMany({});
   await Topic.deleteMany({});
-  organizationResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createOrganization(organizationInput: {
-          name: "Test Organization"
-          description: {
-            shortDescription: "Lorem Ipsum"
-          }
-          contactInfo: {
-            email: "test@email.com"
-            website: "www.website.com"
-          }
-      }) {
-        result
-      }}`,
-    })
-    .set("Accept", "application/json");
-  firstUserSignupResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createUser(userInput: {
-          name: {
-            firstName: "TestUser"
-            lastName: "1"
-          }
-          email: "abc1@email.com"
-          password: "password"
-          info: {
-            about: {
-              shortDescription: "Lorem Ipsum"
-            }
-          }
-      }) {
-        _id
-        name {
-          firstName
-          lastName
-        }
-        email
-        phone
-        isAdmin
-      }}`,
-    })
-    .set("Accept", "application/json");
-  firstUserLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc1@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  await Message.deleteMany({});
+  await Task.deleteMany({});
+  organizationResponse = await testCreateOrganization();
+  firstUserSignupResponse = await testCreateUser(1);
+  firstUserLoginResponse = await testLoginUser(1);
   firstUserToken = firstUserLoginResponse.body.data.login.token;
-  categoryResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createCategory(
-        categoryInput: {
-          name: "Test Category"
-          description: "Lorem Ipsum"
-        }
-      ) {
-        _id
-        name
-        description
-        createdBy
-      }}`,
-    })
-    .set("Accept", "application/json")
-    .set("Authorization", `Bearer ${firstUserToken}`);
+  categoryResponse = await testCreateCategory(firstUserToken);
   await done();
 });
 
@@ -112,45 +61,20 @@ afterAll(async () => {
 });
 
 test("should not create a new topic when user logged out", async () => {
-  const response = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createTopic(
-        topicInput: {
-          name: "Test Topic"
-          description: "Lorem Ipsum"
-          parentCategory: "${categoryResponse.body.data.createCategory._id}"
-        }
-      ) {
-        _id
-      }}`,
-    })
-    .set("Accept", "application/json");
+  const response = await testCreateTopic(
+    null,
+    categoryResponse.body.data.createCategory._id
+  );
   expect(response.type).toBe("application/json");
   expect(response.status).toBe(500);
   expect(response.body.errors[0].message).toBe(authenticationError);
 });
 
 test("should create a new topic when user logged in", async () => {
-  const response = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createTopic(
-        topicInput: {
-          name: "Test Topic"
-          description: "Lorem Ipsum"
-          parentCategory: "${categoryResponse.body.data.createCategory._id}"
-        }
-      ) {
-        _id
-        name
-        description
-        createdBy
-        parentCategory
-      }}`,
-    })
-    .set("Accept", "application/json")
-    .set("Authorization", `Bearer ${firstUserToken}`);
+  const response = await testCreateTopic(
+    firstUserToken,
+    categoryResponse.body.data.createCategory._id
+  );
   topicId = response.body.data.createTopic._id;
   expect(response.type).toBe("application/json");
   expect(response.status).toBe(200);
@@ -183,45 +107,9 @@ test("get all topics", async () => {
 });
 
 test("should not archive a topic by any third user", async () => {
-  const userSignupResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createUser(userInput: {
-        name: {
-          firstName: "TestUser"
-          lastName: "2"
-        }
-        email: "abc2@email.com"
-        password: "password"
-        info: {
-          about: {
-            shortDescription: "Lorem Ipsum"
-          }
-        }
-    }) {
-      _id
-      name {
-        firstName
-        lastName
-      }
-      email
-      phone
-      isAdmin
-    }}`,
-    })
-    .set("Accept", "application/json");
+  const userSignupResponse = await testCreateUser(2);
   expect(userSignupResponse.body.data.createUser.isAdmin).toBe(false);
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-      email: "abc2@email.com"
-      password: "password"
-    ) {
-      token
-    } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(2);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")
@@ -307,4 +195,70 @@ test("should delete a topic with admin/moderator/creator access", async () => {
   expect(category.topics.length).toBe(0);
 });
 
-//getTopicChats to be tested after Message API
+test("should get all messages in a particular topic", async () => {
+  const topicCreationResponse = await testCreateTopic(
+    firstUserToken,
+    categoryResponse.body.data.createCategory._id
+  );
+  const messageCreationResponse = await testCreateMessage(
+    firstUserToken,
+    topicCreationResponse.body.data.createTopic._id
+  );
+  topicId = topicCreationResponse.body.data.createTopic._id;
+  messageId = messageCreationResponse.body.data.createMessage._id;
+  const response = await request
+    .post("/graphql")
+    .send({
+      query: `{ getTopicChats(
+        topicFindInput: {
+          _id: "${topicCreationResponse.body.data.createTopic._id}"
+        }
+      ) {
+        _id
+        description
+        user {
+          _id
+          name {
+            firstName
+          }
+        }
+      }}`,
+    })
+    .set("Accept", "application/json")
+    .set("Authorization", `Bearer ${firstUserToken}`);
+  expect(response.type).toBe("application/json");
+  expect(response.status).toBe(200);
+  expect(response.body.data.getTopicChats.length).toBe(1);
+  expect(response.body.data.getTopicChats[0]._id).toEqual(messageId);
+  expect(response.body.data.getTopicChats[0].description).toBe("Lorem Ipsum");
+  expect(response.body.data.getTopicChats[0].user.name.firstName).toEqual("TestUser");
+  expect(response.body.data.getTopicChats[0].user._id)
+    .toEqual(firstUserSignupResponse.body.data.createUser._id);
+});
+
+test("should get all tasks in a particular topic", async () => {
+  const taskCreationResponse = await testCreateTask(
+    firstUserToken,
+    topicId,
+    messageId
+  );
+  const response = await request
+    .post("/graphql")
+    .send({
+      query: `{ getTopicTasks(
+        topicFindInput: {
+          _id: "${topicId}"
+        }
+      ) {
+        _id
+        description
+        parentTopic
+      }}`,
+    })
+    .set("Accept", "application/json")
+  expect(response.type).toBe("application/json");
+  expect(response.status).toBe(200);
+  expect(response.body.data.getTopicTasks.length).toBe(1);
+  expect(response.body.data.getTopicTasks[0].description).toBe("Lorem Ipsum");
+  expect(response.body.data.getTopicTasks[0].parentTopic).toEqual(topicId);
+});

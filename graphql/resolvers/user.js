@@ -101,7 +101,7 @@ module.exports = {
       );
 
       user = await User.findById(req.currentUser.id).lean();
-      return user
+      return user;
     } catch (err) {
       console.log(err);
       throw err;
@@ -217,7 +217,8 @@ module.exports = {
     }
     try {
       const user = await User.findById(req.currentUser.id).populate(
-        "categoriesCreated", "_id name description"
+        "categoriesCreated",
+        "_id name description"
       );
       return user.categoriesCreated;
     } catch (err) {
@@ -232,7 +233,8 @@ module.exports = {
     }
     try {
       const user = await User.findById(req.currentUser.id).populate(
-        "topicsCreated", "_id name description"
+        "topicsCreated",
+        "_id name description"
       );
       return user.topicsCreated;
     } catch (err) {
@@ -240,5 +242,58 @@ module.exports = {
       throw err;
     }
   },
+
+  getAssignedTasks: async (args, req) => {
+    if (!req.isAuth) {
+      throw new Error(authenticationError);
+    }
+    try {
+      const user = await User.findById(req.currentUser.id).populate(
+        "tasksAssigned"
+      );
+      user.tasksAssigned = user.tasksAssigned.filter((task) => {
+        return !task.isCompleted;
+      });
+      user.tasksAssigned = user.tasksAssigned.map(async (task) => {
+        if (task.attachedMessage != undefined) {
+          const message = await Message.findById(task.attachedMessage);
+          task.description = message.description;
+          task.parentTopic = message.parentTopic;
+        }
+        return task;
+      });
+      return user.tasksAssigned;
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  },
+
+  getCreatedTasks: async (args, req) => {
+    if (!req.isAuth) {
+      throw new Error(authenticationError);
+    }
+    try {
+      const user = await User.findById(req.currentUser.id).populate(
+        "tasksCreated"
+      );
+      user.tasksCreated = user.tasksCreated.filter((task) => {
+        return !task.isCompleted;
+      });
+      user.tasksCreated = user.tasksCreated.map(async (task) => {
+        if (task.attachedMessage != undefined) {
+          const message = await Message.findById(task.attachedMessage);
+          task.description = message.description;
+          task.parentTopic = message.parentTopic;
+        }
+        return task;
+      });
+      return user.tasksCreated;
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  },
+
   //forgot password resolver to be added
 };

@@ -45,6 +45,14 @@ const topicSchema = new Schema({
       },
     ],
   },
+  tasks: {
+    type: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Task",
+      },
+    ],
+  },
   isArchived: {
     type: Boolean,
     default: false,

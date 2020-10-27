@@ -139,6 +139,22 @@ const userSchema = new Schema({
       },
     ],
   },
+  tasksAssigned: {
+    type: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Task",
+      },
+    ],
+  },
+  tasksCreated: {
+    type: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Task",
+      },
+    ],
+  },
   createdAt: {
     type: Date,
     required: true,

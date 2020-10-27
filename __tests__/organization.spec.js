@@ -9,6 +9,11 @@ const {
   authenticationError,
   adminAccessError,
 } = require("../graphql/variables/errorMessages");
+const {
+  testCreateOrganization,
+  testCreateUser,
+  testLoginUser,
+} = require("../config/testVariables");
 const app = require("../app").app;
 const supertest = require("supertest");
 const request = supertest(app);
@@ -34,23 +39,7 @@ afterAll(async () => {
 });
 
 test("should create organization", async () => {
-  const response = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createOrganization(organizationInput: {
-          name: "Test Organization"
-          description: {
-            shortDescription: "Lorem Ipsum"
-          }
-          contactInfo: {
-            email: "test@email.com"
-            website: "www.website.com"
-          }
-      }) {
-        result
-      }}`,
-    })
-    .set("Accept", "application/json");
+  const response = await testCreateOrganization();
   expect(response.type).toBe("application/json");
   expect(response.status).toBe(200);
   expect(response.body.data.createOrganization.result).toBe(
@@ -109,49 +98,9 @@ test("don't update organization details without admin authorization", async () =
 });
 
 test("update organization details with admin authorization", async () => {
-  const userSignupResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createUser(userInput: {
-          name: {
-            firstName: "TestUser"
-            lastName: "1"
-          }
-          email: "abc1@email.com"
-          password: "password"
-          info: {
-            about: {
-              shortDescription: "Lorem Ipsum"
-            }
-          }
-      }) {
-        _id
-        name {
-          firstName
-          lastName
-        }
-        email
-        phone
-        isAdmin
-      }}`,
-    })
-    .set("Accept", "application/json");
+  const userSignupResponse = await testCreateUser(1);
   expect(userSignupResponse.body.data.createUser.isAdmin).toBe(true);
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc1@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(1);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")
@@ -189,49 +138,9 @@ test("update organization details with admin authorization", async () => {
 });
 
 test("escalate provided user to admin by another admin using Email", async () => {
-  const userSignupResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createUser(userInput: {
-          name: {
-            firstName: "TestUser"
-            lastName: "2"
-          }
-          email: "abc2@email.com"
-          password: "password"
-          info: {
-            about: {
-              shortDescription: "Lorem Ipsum"
-            }
-          }
-      }) {
-        _id
-        name {
-          firstName
-          lastName
-        }
-        email
-        phone
-        isAdmin
-      }}`,
-    })
-    .set("Accept", "application/json");
+  const userSignupResponse = await testCreateUser(2);
   expect(userSignupResponse.body.data.createUser.isAdmin).toBe(false);
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc1@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(1);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")
@@ -256,50 +165,10 @@ test("escalate provided user to admin by another admin using Email", async () =>
 });
 
 test("escalate provided user to admin by another admin using Id", async () => {
-  const userSignupResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createUser(userInput: {
-          name: {
-            firstName: "TestUser"
-            lastName: "3"
-          }
-          email: "abc3@email.com"
-          password: "password"
-          info: {
-            about: {
-              shortDescription: "Lorem Ipsum"
-            }
-          }
-      }) {
-        _id
-        name {
-          firstName
-          lastName
-        }
-        email
-        phone
-        isAdmin
-      }}`,
-    })
-    .set("Accept", "application/json");
+  const userSignupResponse = await testCreateUser(3);
   const toBeAdmin = userSignupResponse.body.data.createUser._id;
   expect(userSignupResponse.body.data.createUser.isAdmin).toBe(false);
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc2@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(2);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")
@@ -322,49 +191,9 @@ test("escalate provided user to admin by another admin using Id", async () => {
 });
 
 test("escalate provided user to moderator by another admin using Email", async () => {
-  const userSignupResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createUser(userInput: {
-          name: {
-            firstName: "TestUser"
-            lastName: "4"
-          }
-          email: "abc4@email.com"
-          password: "password"
-          info: {
-            about: {
-              shortDescription: "Lorem Ipsum"
-            }
-          }
-      }) {
-        _id
-        name {
-          firstName
-          lastName
-        }
-        email
-        phone
-        isModerator
-      }}`,
-    })
-    .set("Accept", "application/json");
+  const userSignupResponse = await testCreateUser(4);
   expect(userSignupResponse.body.data.createUser.isModerator).toBe(false);
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc3@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(3);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")
@@ -387,50 +216,10 @@ test("escalate provided user to moderator by another admin using Email", async (
 });
 
 test("escalate provided user to moderator by another admin using Id", async () => {
-  const userSignupResponse = await request
-    .post("/graphql")
-    .send({
-      query: `mutation{ createUser(userInput: {
-          name: {
-            firstName: "TestUser"
-            lastName: "5"
-          }
-          email: "abc5@email.com"
-          password: "password"
-          info: {
-            about: {
-              shortDescription: "Lorem Ipsum"
-            }
-          }
-      }) {
-        _id
-        name {
-          firstName
-          lastName
-        }
-        email
-        phone
-        isModerator
-      }}`,
-    })
-    .set("Accept", "application/json");
+  const userSignupResponse = await testCreateUser(5);
   const tobeModerator = userSignupResponse.body.data.createUser._id;
   expect(userSignupResponse.body.data.createUser.isModerator).toBe(false);
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc3@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(3);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")
@@ -453,21 +242,7 @@ test("escalate provided user to moderator by another admin using Id", async () =
 });
 
 test("demote provided admin to user by another admin using Email", async () => {
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc1@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(1);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")
@@ -492,21 +267,7 @@ test("demote provided admin to user by another admin using Email", async () => {
 test("demote provided admin to user by another admin using Id", async () => {
   const user = await User.findOne({email: "abc3@email.com"}).lean();
   const toBeDemoted = user._id;
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc1@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(1);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")
@@ -529,21 +290,7 @@ test("demote provided admin to user by another admin using Id", async () => {
 });
 
 test("demote provided moderator to user by another admin using Email", async () => {
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc1@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(1);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")
@@ -568,21 +315,7 @@ test("demote provided moderator to user by another admin using Email", async () 
 test("demote provided moderator to user by another admin using Id", async () => {
   const user = await User.findOne({ email: "abc5@email.com" }).lean();
   const toBeDemoted = user._id;
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc1@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(1);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")
@@ -605,21 +338,7 @@ test("demote provided moderator to user by another admin using Id", async () => 
 });
 
 test("get all admins and moderators", async () => {
-  const userLoginResponse = await request
-    .post("/graphql")
-    .send({
-      query: `{ login(
-        email: "abc1@email.com"
-        password: "password"
-      ) {
-        name {
-          firstName
-          lastName
-        }
-        token
-      } }`,
-    })
-    .set("Accept", "application/json");
+  const userLoginResponse = await testLoginUser(1);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
     .post("/graphql")
