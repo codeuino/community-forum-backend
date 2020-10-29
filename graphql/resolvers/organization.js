@@ -222,11 +222,11 @@ module.exports = {
         const organization = await Organization.findOne({})
           .populate(
             "adminIds",
-            "_id name email info isAdmin isModerator isActivated isRemoved"
+            "_id name email info isAdmin isModerator isActivated isRemoved isFirstAdmin"
           )
           .populate(
             "moderatorIds",
-            "_id name email info isAdmin isModerator isActivated isRemoved"
+            "_id name email info isAdmin isModerator isActivated isRemoved isFirstAdmin"
           );
         return {
           admins: organization.adminIds,
