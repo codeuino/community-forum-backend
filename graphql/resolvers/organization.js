@@ -220,8 +220,14 @@ module.exports = {
     try {
       if (req.currentUser.isAdmin) {
         const organization = await Organization.findOne({})
-          .populate("adminIds", "_id name email isFirstAdmin")
-          .populate("moderatorIds", "_id name email isFirstAdmin");
+          .populate(
+            "adminIds",
+            "_id name email info isAdmin isModerator isActivated isRemoved"
+          )
+          .populate(
+            "moderatorIds",
+            "_id name email info isAdmin isModerator isActivated isRemoved"
+          );
         return {
           admins: organization.adminIds,
           moderators: organization.moderatorIds,

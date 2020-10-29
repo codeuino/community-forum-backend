@@ -1,5 +1,6 @@
 const Message = require("../../models/message");
 const Topic = require("../../models/topic");
+const User = require("../../models/user");
 const {
   authenticationError,
   blockRemoveUserError,
@@ -35,6 +36,8 @@ module.exports = {
         const saveTopic = await Topic.findById(args.messageInput.parentTopic);
         saveTopic.chats.push(message);
         await saveTopic.save();
+        let user = User.findById(req.currentUser.id, "_id name");
+        saveMessage._doc.user = user;
         return { ...saveMessage._doc };
       } else {
         throw new Error(topicArchivedError);
@@ -57,6 +60,8 @@ module.exports = {
       if (message.userId.toString() == req.currentUser.id) {
         message.description = args.messageInput.description;
         const updateMessage = await message.save();
+        let user = User.findById(req.currentUser.id, "_id name");
+        updateMessage._doc.user = user;
         return { ...updateMessage._doc };
       }
       throw new Error(noAuthorizationError);

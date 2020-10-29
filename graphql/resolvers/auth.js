@@ -2,17 +2,21 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const User = require("../../models/user");
+const {
+  passwordError,
+  noUserError,
+} = require("../variables/errorMessages");
 
 module.exports = {
   login: async (args) => {
     try {
       const user = await User.findOne({ email: args.email });
       if (!user) {
-        throw new Error("User not registered");
+        throw new Error(noUserError);
       }
       const isequal = await bcrypt.compare(args.password, user.password);
       if (!isequal) {
-        throw new Error("Incorrect password provided");
+        throw new Error(passwordError);
       }
       const token = jwt.sign(
         {

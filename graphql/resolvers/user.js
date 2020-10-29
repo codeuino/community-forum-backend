@@ -24,7 +24,7 @@ module.exports = {
       if (req.currentUser.isAdmin) {
         const users = await User.find(
           { isRemoved: false },
-          "name email info isAdmin isModerator isActivated"
+          "name email info isAdmin isModerator isActivated isRemoved"
         );
         return users;
       } else {
@@ -96,6 +96,7 @@ module.exports = {
             name: args.userInput.name,
             phone: args.userInput.phone,
             info: args.userInput.info,
+            socialMedia: args.userInput.socialMedia,
           },
         }
       );

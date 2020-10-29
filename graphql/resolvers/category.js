@@ -52,7 +52,7 @@ module.exports = {
     try {
       const category = await Category.findById(
         args.categoryFindInput._id
-      ).populate('topics', ['name', 'description', 'tags', 'isArchived']);
+      ).populate('topics', ['name', 'description', 'tags', 'isArchived', 'createdBy']);
       if (!category) {
         throw new Error(categoryRemovedError);
       }
