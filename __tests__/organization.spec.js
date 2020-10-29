@@ -367,5 +367,4 @@ test("get all admins and moderators", async () => {
   expect(response.status).toBe(200);
   expect(response.body.data.getAdminModerators.admins.length).toBe(1);
   expect(response.body.data.getAdminModerators.moderators.length).toBe(0);
-  expect(response.body.data.getAdminModerators.admins[0].isFirstAdmin).toBe(true);
 });
