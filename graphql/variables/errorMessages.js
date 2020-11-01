@@ -10,6 +10,7 @@ module.exports.firstAdminBlockError = "First Admin can't be blocked";
 module.exports.firstAdminRemoveError = "First Admin can't be removed";
 module.exports.blockRemoveUserError = "User blocked or removed";
 module.exports.noAuthorizationError = "No rights to perform this action";
+module.exports.passwordError = "Incorrect password provided";
 
 //organizations
 module.exports.noOrganizationError = "Organization to be created first";

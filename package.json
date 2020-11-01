@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "nodemon ./bin/www",
-    "test": "env-cmd -f .env.test jest --detectOpenHandles"
+    "test": "env-cmd -f .env.test jest --detectOpenHandles",
+    "travisTest": "env-cmd -f .env.travis jest --detectOpenHandles"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

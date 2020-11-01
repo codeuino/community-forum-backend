@@ -11,7 +11,7 @@ type message {
   replyTo: String
   description: String!
   parentTopic: String!
-  likes: Boolean!
+  likes: Int!
   isPinned: Boolean!
   isTasked: Boolean!
   isAnnounced: Boolean!
