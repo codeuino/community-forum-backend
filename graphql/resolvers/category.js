@@ -28,7 +28,7 @@ module.exports = {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
-    if ((req.currentUser.isBlocked || req.currentUser.isRemoved)) {
+    if ((req.currentUser.isBlocked || req.currentUser.isBlocked)) {
       throw new Error(blockRemoveUserError);
     }
     try {
@@ -52,7 +52,7 @@ module.exports = {
     try {
       const category = await Category.findById(
         args.categoryFindInput._id
-      ).populate('topics', ['name', 'description', 'tags', 'isArchived', 'createdBy']);
+      ).populate('topics', ['name', 'description', 'tags', 'isArchived', 'createdBy', 'parentCategory', 'chats']);
       if (!category) {
         throw new Error(categoryRemovedError);
       }

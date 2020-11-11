@@ -37,7 +37,7 @@ type RootQuery {
 }
 
 type RootMutation {
-  createUser(userInput: userInput!): user!
+  createUser(userInput: userInput!): authData!
   updateUser(userInput: userInput!): user!
   blockUser(userFindInput: userFindInput!): resultData!
   removeUser(userFindInput: userFindInput!): resultData!

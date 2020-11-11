@@ -14,6 +14,7 @@ const {
   userBlockResult,
   userRemoveResult,
 } = require("../variables/resultMessages");
+const { login } = require("./auth");
 
 module.exports = {
   users: async (args, req) => {
@@ -24,7 +25,7 @@ module.exports = {
       if (req.currentUser.isAdmin) {
         const users = await User.find(
           { isRemoved: false },
-          "name email info isAdmin isModerator isActivated isRemoved"
+          "name email info isAdmin isModerator isBlocked isRemoved"
         );
         return users;
       } else {
@@ -77,7 +78,11 @@ module.exports = {
       const saveUser = await user.save();
       organization.totalUsers += 1;
       await organization.save();
-      return { ...saveUser._doc };
+      const loginResponse = await login({
+        email: args.userInput.email,
+        password: args.userInput.password
+      });
+      return loginResponse;
     } catch (err) {
       console.log(err);
       throw err;
@@ -127,7 +132,7 @@ module.exports = {
         if (user.isFirstAdmin) {
           throw new Error(firstAdminBlockError);
         }
-        user.isActivated = false;
+        user.isBlocked = true;
         await user.save();
         const organization = await Organization.findOne();
         organization.blockedUsers.push(user);

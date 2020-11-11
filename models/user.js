@@ -115,9 +115,9 @@ const userSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  isActivated: {
+  isBlocked: {
     type: Boolean,
-    default: true,
+    default: false,
   },
   isRemoved: {
     type: Boolean,

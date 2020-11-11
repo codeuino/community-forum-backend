@@ -32,7 +32,7 @@ type user {
   isFirstAdmin: Boolean!
   isAdmin: Boolean!
   isModerator: Boolean!
-  isActivated: Boolean!
+  isBlocked: Boolean!
   isRemoved: Boolean!
 }
 
