@@ -45,7 +45,7 @@ module.exports = {
         };
       }
       return {
-        organization,
+        ...organization,
         exists: true,
       };
     } catch (err) {

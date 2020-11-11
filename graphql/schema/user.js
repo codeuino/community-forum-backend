@@ -76,6 +76,15 @@ input userFindInput {
 type authData {
   _id: String!
   name: userName!
+  email: String!
+  phone: String
+  socialMedia: userSocialMedia
+  info: userInfo!
+  isFirstAdmin: Boolean!
+  isAdmin: Boolean!
+  isModerator: Boolean!
+  isBlocked: Boolean!
+  isRemoved: Boolean!
   token: String!
 }
 `;
