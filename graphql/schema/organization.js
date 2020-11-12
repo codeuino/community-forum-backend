@@ -10,13 +10,14 @@ type organizationInfo {
 }
 
 type organization {
-  _id: String!
-  name: String!
-  description: organizationDescription!
-  contactInfo: organizationInfo!
-  isArchived: Boolean!
-  isUnderMaintenance: Boolean!
-  totalUsers: Int!
+  _id: String
+  name: String
+  description: organizationDescription
+  contactInfo: organizationInfo
+  isArchived: Boolean
+  isUnderMaintenance: Boolean
+  totalUsers: Int
+  exists: Boolean
 }
 
 input organizationDescriptionInput {

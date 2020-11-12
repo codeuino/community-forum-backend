@@ -47,8 +47,17 @@ module.exports = {
         }
         email
         phone
+        info {
+          about {
+            shortDescription
+            designation
+          }
+        }
         isAdmin
         isModerator
+        isBlocked
+        isRemoved
+        token
       }}`,
       })
       .set("Accept", "application/json");
@@ -62,10 +71,23 @@ module.exports = {
         email: "abc${userNo}@email.com"
         password: "password"
       ) {
+        _id
         name {
           firstName
           lastName
         }
+        email
+        phone
+        info {
+          about {
+            shortDescription
+            designation
+          }
+        }
+        isAdmin
+        isModerator
+        isBlocked
+        isRemoved
         token
       } }`,
       })

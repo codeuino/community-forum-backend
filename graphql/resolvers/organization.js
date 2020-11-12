@@ -39,7 +39,15 @@ module.exports = {
   getOrganization: async () => {
     try {
       const organization = await Organization.findOne().lean();
-      return organization;
+      if (organization == null) {
+        return {
+          exists: false,
+        };
+      }
+      return {
+        ...organization,
+        exists: true,
+      };
     } catch (err) {
       console.log(err);
       throw err;

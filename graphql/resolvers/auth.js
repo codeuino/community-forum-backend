@@ -10,7 +10,7 @@ const {
 module.exports = {
   login: async (args) => {
     try {
-      const user = await User.findOne({ email: args.email });
+      const user = await User.findOne({ email: args.email }).lean();
       if (!user) {
         throw new Error(noUserError);
       }
@@ -20,7 +20,8 @@ module.exports = {
       }
       const token = jwt.sign(
         {
-          id: user.id,
+          id: user._id,
+          name: user.name,
         },
         `${process.env.JWT_SECRET}`,
         {
@@ -29,8 +30,7 @@ module.exports = {
         }
       );
       return {
-        _id: user._id,
-        name: user.name,
+        ...user,
         token: token,
       };
     } catch (err) {
