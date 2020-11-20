@@ -3,9 +3,9 @@ type topic {
   _id: String!
   name: String!
   description: String!
-  createdBy: String!
+  createdBy: user!
   parentCategory: String!
-  tags: [String!]!
+  tags: [tag!]
   chats: [String!]!
   isArchived: Boolean
 }
@@ -15,7 +15,7 @@ input topicInput {
   name: String!
   description: String!
   parentCategory: String
-  tags: [String!]
+  tagString: String
 }
 
 input topicFindInput {

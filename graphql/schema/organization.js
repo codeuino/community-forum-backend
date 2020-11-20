@@ -17,7 +17,7 @@ type organization {
   isArchived: Boolean
   isUnderMaintenance: Boolean
   totalUsers: Int
-  exists: Boolean
+  exists: Boolean!
 }
 
 input organizationDescriptionInput {

@@ -3,7 +3,6 @@ const Topic = require("../../models/topic");
 const User = require("../../models/user");
 const {
   authenticationError,
-  blockRemoveUserError,
   noAuthorizationError,
   topicArchivedError,
 } = require("../variables/errorMessages");
@@ -21,7 +20,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const topic = await Topic.findById(args.messageInput.parentTopic).lean();
@@ -37,8 +36,8 @@ module.exports = {
         saveTopic.chats.push(message);
         await saveTopic.save();
         let user = User.findById(req.currentUser.id, "_id name");
-        saveMessage._doc.user = user;
-        return { ...saveMessage._doc };
+        saveMessage.user = user;
+        return saveMessage;
       } else {
         throw new Error(topicArchivedError);
       }
@@ -53,7 +52,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const message = await Message.findById(args.messageInput._id);
@@ -61,8 +60,8 @@ module.exports = {
         message.description = args.messageInput.description;
         const updateMessage = await message.save();
         let user = User.findById(req.currentUser.id, "_id name");
-        updateMessage._doc.user = user;
-        return { ...updateMessage._doc };
+        updateMessage.user = user;
+        return updateMessage;
       }
       throw new Error(noAuthorizationError);
     } catch (err) {
@@ -76,7 +75,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const message = await Message.findById(args.messageFindInput._id);
@@ -104,7 +103,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const message = await Message.findById(args.messageFindInput._id);
@@ -128,7 +127,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const message = await Message.findById(args.messageFindInput._id);
@@ -152,7 +151,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const message = await Message.findById(args.messageFindInput._id);
@@ -173,7 +172,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const message = await Message.findById(args.messageFindInput._id);

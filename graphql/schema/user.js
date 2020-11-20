@@ -5,11 +5,7 @@ type userName {
 }
 
 type userSocialMedia {
-  youtube: String
-  facebook: String
   twitter: String
-  github: String
-  linkedin: String
 }
 
 type userInfo {
@@ -24,7 +20,7 @@ type userAbout {
 
 type user {
   _id: String!
-  name: userName
+  name: userName!
   email: String!
   phone: String
   socialMedia: userSocialMedia
@@ -42,11 +38,7 @@ input userNameInput {
 }
 
 input userSocialMediaInput {
-  youtube: String
-  facebook: String
   twitter: String
-  github: String
-  linkedin: String
 }
 
 input userInfoInput {
@@ -63,7 +55,7 @@ input userInput {
   name: userNameInput!
   email: String
   password: String
-  phone: String
+  phone: String!
   socialMedia: userSocialMediaInput
   info: userInfoInput!
 }
@@ -77,7 +69,7 @@ type authData {
   _id: String!
   name: userName!
   email: String!
-  phone: String
+  phone: String!
   socialMedia: userSocialMedia
   info: userInfo!
   isFirstAdmin: Boolean!

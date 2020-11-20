@@ -3,9 +3,11 @@ type category {
   _id: String!
   name: String!
   description: String!
-  createdBy: String!
+  createdBy: user!
   topics: [String!]!
-  isArchived: Boolean
+  isArchived: Boolean!
+  createdAt: Date!
+  updatedAt: Date!
 }
 
 input categoryInput {

@@ -14,12 +14,13 @@ module.exports = async (req, res, next) => {
     req.isAuth = false;
     return next();
   }
-  req.isAuth = true;
-  let user = await User.findById(decodedToken.id).lean();
-  let result = delete user.password;
-  req.currentUser = user;
-  req.currentUser.id = user._id;
-  delete req.currentUser.password;
-  delete req.currentUser._id;
+  let user = await User.findById(decodedToken._id).lean();
+  if (user) {
+    req.isAuth = true;
+    req.currentUser = user;
+    req.currentUser.id = user._id;
+    delete req.currentUser.password;
+    delete req.currentUser._id;
+  }
   next();
 };

@@ -7,7 +7,9 @@ const {
   madeModeratorResult, 
   removeAdminResult, 
   removeModeratorResult } = require("../variables/resultMessages");
-const { authenticationError, 
+const {
+  noAuthorizationError,
+  authenticationError, 
   adminAccessError, 
   noUserError, 
   organizationExistError, 
@@ -59,20 +61,19 @@ module.exports = {
       throw new Error(authenticationError);
     }
     try {
-      const organizations = await Organization.find({}).lean();
-      if (req.currentUser.isAdmin && organizations.length !== 0) {
-        let organization = await Organization.updateOne(
-          {},
-          {
-            $set: {
-              name: args.organizationInput.name,
-              description: args.organizationInput.description,
-              contactInfo: args.organizationInput.contactInfo,
-            },
-          }
-        );
-        organization = await Organization.findOne({}).lean();
-        return organization;
+      const organization = await Organization.findOne({});
+      if (req.currentUser.isAdmin && organization) {
+        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+          throw new Error(noAuthorizationError);
+        }
+        organization.name = args.organizationInput.name,
+        organization.description = args.organizationInput.description,
+        organization.contactInfo = args.organizationInput.contactInfo,
+        organization = await Organization.save();
+        return {
+          ...organization,
+          exists: true,
+        };
       } else {
         throw new Error(adminAccessError);
       }
@@ -88,6 +89,9 @@ module.exports = {
     }
     try {
       if (req.currentUser.isAdmin) {
+        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+          throw new Error(noAuthorizationError);
+        }
         let user;
         if (args.userFindInput.email) {
           user = await User.findOne({ email: args.userFindInput.email });
@@ -119,6 +123,9 @@ module.exports = {
     }
     try {
       if (req.currentUser.isAdmin) {
+        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+          throw new Error(noAuthorizationError);
+        }
         let user;
         if (args.userFindInput.email) {
           user = await User.findOne({ email: args.userFindInput.email });
@@ -151,6 +158,9 @@ module.exports = {
     }
     try {
       if (req.currentUser.isAdmin) {
+        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+          throw new Error(noAuthorizationError);
+        }
         let user;
         if (args.userFindInput.email) {
           user = await User.findOne({ email: args.userFindInput.email });
@@ -190,6 +200,9 @@ module.exports = {
     }
     try {
       if (req.currentUser.isAdmin) {
+        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+          throw new Error(noAuthorizationError);
+        }
         let user;
         if (args.userFindInput.email) {
           user = await User.findOne({ email: args.userFindInput.email });
@@ -227,15 +240,32 @@ module.exports = {
     }
     try {
       if (req.currentUser.isAdmin) {
+        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+          throw new Error(noAuthorizationError);
+        }
         const organization = await Organization.findOne({})
-          .populate(
-            "adminIds",
-            "_id name email info isAdmin isModerator isActivated isRemoved isFirstAdmin"
-          )
-          .populate(
-            "moderatorIds",
-            "_id name email info isAdmin isModerator isActivated isRemoved isFirstAdmin"
-          );
+          .populate("adminIds", [
+            "_id",
+            "name",
+            "email",
+            "info",
+            "isAdmin",
+            "isModerator",
+            "isActivated",
+            "isRemoved",
+            "isFirstAdmin",
+          ])
+          .populate("moderatorIds", [
+            "_id",
+            "name",
+            "email",
+            "info",
+            "isAdmin",
+            "isModerator",
+            "isActivated",
+            "isRemoved",
+            "isFirstAdmin",
+          ]);
         return {
           admins: organization.adminIds,
           moderators: organization.moderatorIds,

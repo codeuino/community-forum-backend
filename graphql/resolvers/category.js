@@ -2,10 +2,10 @@ const User = require("../../models/user");
 const Category = require("../../models/category");
 const Topic = require("../../models/topic");
 const Message = require("../../models/message");
+const Tag = require("../../models/tag");
 const {
   authenticationError,
   categoryRemovedError,
-  blockRemoveUserError,
   noAuthorizationError,
 } = require("../variables/errorMessages");
 const {
@@ -16,7 +16,7 @@ const {
 module.exports = {
   categories: async () => {
     try {
-      let categories = await Category.find({}).lean();
+      let categories = await Category.find({}).populate("createdBy").lean();
       return categories
     } catch (err) {
       console.log(err);
@@ -28,8 +28,8 @@ module.exports = {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
-    if ((req.currentUser.isBlocked || req.currentUser.isBlocked)) {
-      throw new Error(blockRemoveUserError);
+    if (req.currentUser.isBlocked || req.currentUser.isBlocked) {
+      throw new Error(noAuthorizationError);
     }
     try {
       let category = new Category({
@@ -41,7 +41,8 @@ module.exports = {
       const user = await User.findById(req.currentUser.id);
       user.categoriesCreated.push(category);
       await user.save();
-      return { ...saveCategory._doc };
+      category = await Category.findById(saveCategory._id).populate("createdBy");
+      return category
     } catch (err) {
       console.log(err);
       throw err;
@@ -52,7 +53,10 @@ module.exports = {
     try {
       const category = await Category.findById(
         args.categoryFindInput._id
-      ).populate('topics', ['name', 'description', 'tags', 'isArchived', 'createdBy', 'parentCategory', 'chats']);
+      ).populate({
+        path: "topics",
+        populate: {path: 'createdBy tags'}
+      });
       if (!category) {
         throw new Error(categoryRemovedError);
       }
@@ -68,7 +72,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const category = await Category.findById(args.categoryFindInput._id);
@@ -92,8 +96,8 @@ module.exports = {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
-    if ((req.currentUser.isBlocked || req.currentUser.isRemoved)) {
-      throw new Error(blockRemoveUserError);
+    if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+      throw new Error(noAuthorizationError);
     }
     try {
       const category = await Category.findById(args.categoryInput._id);
@@ -104,7 +108,10 @@ module.exports = {
         category.name = args.categoryInput.name;
         category.description = args.categoryInput.description;
         const updateCategory = await category.save();
-        return { ...updateCategory._doc };
+        category = await Category.findById(args.categoryInput._id).populate(
+          "createdBy"
+        );
+        return category;
       }
       throw new Error(noAuthorizationError);
     } catch (err) {
@@ -117,8 +124,8 @@ module.exports = {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
-    if ((req.currentUser.isBlocked || req.currentUser.isRemoved)) {
-      throw new Error(blockRemoveUserError);
+    if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+      throw new Error(noAuthorizationError);
     }
     try {
       const category = await Category.findById(args.categoryFindInput._id);
@@ -126,7 +133,23 @@ module.exports = {
         category.createdBy.toString() == req.currentUser.id || 
         req.currentUser.isModerator
       ) {
-        await Topic.deleteMany({parentCategory: args.categoryFindInput._id});
+        const topics = await Topic.find({
+          parentCategory: args.categoryFindInput._id,
+        });
+        for (const topic of topics) {
+          for (const stringTag of topic.tags) {
+            const tag = await Tag.findById(stringTag);
+            tag.topics = tag.topics.filter(
+              (topicId) => topicId.toString() != args.topicFindInput._id
+            );
+            if (tag.topics.length == 0) {
+              await tag.remove();
+            } else {
+              await tag.save();
+            }
+          }
+          await topic.remove()
+        }
         await Message.deleteMany({parentCategory: args.categoryFindInput._id});
         await category.remove();
         const user = await User.findById(req.currentUser.id);
