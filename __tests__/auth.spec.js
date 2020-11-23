@@ -40,5 +40,5 @@ test("login existing user", async () => {
   });
   const token = response.body.data.login.token;
   const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-  expect(decodedToken.id).toBe(userId);
+  expect(decodedToken._id).toBe(userId);
 });

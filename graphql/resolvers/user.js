@@ -55,6 +55,7 @@ module.exports = {
           throw new Error(userBlockedError);
         }
         if (existingUser.isRemoved) {
+          organization = await Organization.findOne();
           existingUser.name = args.userInput.name;
           existingUser.password = args.userInput.password,
           existingUser.phone = args.userInput.phone;
@@ -66,6 +67,9 @@ module.exports = {
           existingUser.isModerator = false;
           existingUser.isRemoved = false;
           existingUser = await existingUser.save();
+          organization.removedUsers = organization.removedUsers.filter(
+            (userId) => userId.toString() != existingUser.id
+          );
         }
       } else {
         if (users.length === 0) {
@@ -96,9 +100,9 @@ module.exports = {
           });
         }
         const saveUser = await user.save();
-        organization.totalUsers += 1;
-        await organization.save();
       }
+      organization.totalUsers += 1;
+      await organization.save();
       const loginResponse = await login({
         email: args.userInput.email,
         password: args.userInput.password
@@ -217,7 +221,9 @@ module.exports = {
           }
           user.isRemoved = true;
           await user.save();
-          organization.totalUsers -= 1;
+          if (!user.isBlocked) {
+            organization.totalUsers -= 1;
+          }
           if (user.isAdmin) {
             organization.adminIds = organization.adminIds.filter(
               (adminId) => adminId.toString() != user.id

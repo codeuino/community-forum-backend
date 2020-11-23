@@ -61,7 +61,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     try {
-      const organization = await Organization.findOne({});
+      let organization = await Organization.findOne({});
       if (req.currentUser.isAdmin && organization) {
         if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
           throw new Error(noAuthorizationError);
@@ -69,7 +69,8 @@ module.exports = {
         organization.name = args.organizationInput.name,
         organization.description = args.organizationInput.description,
         organization.contactInfo = args.organizationInput.contactInfo,
-        organization = await Organization.save();
+        await organization.save();
+        organization = await Organization.findOne().lean();
         return {
           ...organization,
           exists: true,

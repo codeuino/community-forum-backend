@@ -47,7 +47,6 @@ module.exports = {
           parentCategory: args.topicInput.parentCategory,
           createdBy: req.currentUser.id,
         });
-        console.log(topic);
         if(args.topicInput.tagString) {
           let tagStringArray = args.topicInput.tagString.trim().split(" ");
           tagStringArray.forEach((tagElement, index) => {
@@ -114,42 +113,50 @@ module.exports = {
         topic.createdBy.toString() == req.currentUser.id ||
         req.currentUser.isModerator
       ) {
+        let oldTagStringArray = [];
+        let oldUniqueTagStringArray = [];
+        let newTagStringArray = [];
+        let newUniqueTagStringArray = [];
+        if (topic.tagString) {
+          oldTagStringArray = topic.tagString.trim().split(" ");
+          oldTagStringArray.forEach((tagElement, index) => {
+            const tagElementNoSpace = tagElement.trim();
+            if (
+              !tagElementNoSpace.match(`/^\s*$/`) &&
+              tagElementNoSpace.length != 0
+            ) {
+              oldTagStringArray[index] =
+                tagElementNoSpace[0].toUpperCase() +
+                tagElementNoSpace.slice(1).toLowerCase();
+            }
+          });
+          oldUniqueTagStringArray = [...new Set(oldTagStringArray)];
+        }
         topic.name = args.topicInput.name;
         topic.description = args.topicInput.description;
         topic.tagString = args.topicInput.tagString;
-        let oldTagStringArray = topic.tagString.trim().split(" ");
-        oldTagStringArray.forEach((tagElement, index) => {
-          const tagElementNoSpace = tagElement.trim();
-          if (
-            !tagElementNoSpace.match(`/^\s*$/`) &&
-            tagElementNoSpace.length != 0
-          ) {
-            oldTagStringArray[index] =
-              tagElementNoSpace[0].toUpperCase() +
-              tagElementNoSpace.slice(1).toLowerCase();
-          }
-        });
-        let oldUniqueTagStringArray = [...new Set(oldTagStringArray)];
-        let newTagStringArray = args.topicInput.tagString.trim().split(" ");
-        newTagStringArray.forEach((tagElement, index) => {
-          const tagElementNoSpace = tagElement.trim();
-          if (
-            !tagElementNoSpace.match(`/^\s*$/`) &&
-            tagElementNoSpace.length != 0
-          ) {
-            newTagStringArray[index] =
-              tagElementNoSpace[0].toUpperCase() +
-              tagElementNoSpace.slice(1).toLowerCase();
-          }
-        });
-        let newUniqueTagStringArray = [...new Set(newTagStringArray)];
+        if (args.topicInput.tagString) {
+          newTagStringArray = args.topicInput.tagString.trim().split(" ");
+          newTagStringArray.forEach((tagElement, index) => {
+            const tagElementNoSpace = tagElement.trim();
+            if (
+              !tagElementNoSpace.match(`/^\s*$/`) &&
+              tagElementNoSpace.length != 0
+            ) {
+              newTagStringArray[index] =
+                tagElementNoSpace[0].toUpperCase() +
+                tagElementNoSpace.slice(1).toLowerCase();
+            }
+          });
+          newUniqueTagStringArray = [...new Set(newTagStringArray)];
+        }
         const oldRemovableTags = oldUniqueTagStringArray.filter(
           (tag) => !newUniqueTagStringArray.includes(tag)
         );
         for (const stringTag of oldRemovableTags) {
-          const tag = await Tag.findById(stringTag);
+          const tag = await Tag.findOne({ name: stringTag });
           tag.topics = tag.topics.filter(
-            (topicId) => topicId.toString() != args.topicFindInput._id
+            (topicId) => topicId.toString() != args.topicInput._id
           );
           if (tag.topics.length == 0) {
             await tag.remove();

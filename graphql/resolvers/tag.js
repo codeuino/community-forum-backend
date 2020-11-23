@@ -4,7 +4,7 @@ const {
 } = require("../variables/errorMessages");
 
 module.exports = {
-  getTagTopics: async () => {
+  getTagTopics: async (args, req) => {
     try {
       const tag = await Tag.findById(args.tagFindInput._id).populate({
         path: "topics",

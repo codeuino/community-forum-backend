@@ -80,7 +80,7 @@ test("should create a new topic when user logged in", async () => {
   expect(response.status).toBe(200);
   expect(response.body.data.createTopic.name).toBe("Test Topic");
   expect(response.body.data.createTopic.description).toBe("Lorem Ipsum");
-  expect(response.body.data.createTopic.createdBy).toEqual(
+  expect(response.body.data.createTopic.createdBy._id).toEqual(
     firstUserSignupResponse.body.data.createUser._id
   );
   expect(response.body.data.createTopic.parentCategory).toEqual(

@@ -34,6 +34,7 @@ module.exports = {
           }
           email: "abc${userNo}@email.com"
           password: "password"
+          phone: "0000000000"
           info: {
             about: {
               shortDescription: "Lorem Ipsum"
@@ -107,7 +108,12 @@ module.exports = {
         _id
         name
         description
-        createdBy
+        createdBy {
+          _id
+          name {
+            firstName
+          }
+        }
       }}`,
       })
       .set("Accept", "application/json")
@@ -123,13 +129,23 @@ module.exports = {
           name: "Test Topic"
           description: "Lorem Ipsum"
           parentCategory: "${categoryId}"
+          tagString: "tAg1 TAG2"
         }
       ) {
         _id
         name
         description
         parentCategory
-        createdBy
+        tags {
+          _id
+          name
+        }
+        createdBy {
+          _id
+          name {
+            firstName
+          }
+        }
       }}`,
       })
       .set("Accept", "application/json")

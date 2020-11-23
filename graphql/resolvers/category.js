@@ -100,7 +100,7 @@ module.exports = {
       throw new Error(noAuthorizationError);
     }
     try {
-      const category = await Category.findById(args.categoryInput._id);
+      let category = await Category.findById(args.categoryInput._id);
       if (
         category.createdBy.toString() == req.currentUser.id ||
         req.currentUser.isModerator
@@ -140,7 +140,7 @@ module.exports = {
           for (const stringTag of topic.tags) {
             const tag = await Tag.findById(stringTag);
             tag.topics = tag.topics.filter(
-              (topicId) => topicId.toString() != args.topicFindInput._id
+              (topicId) => topicId.toString() != topic._id
             );
             if (tag.topics.length == 0) {
               await tag.remove();

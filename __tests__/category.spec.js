@@ -64,7 +64,7 @@ test("should create a new category when user logged in", async () => {
   expect(response.status).toBe(200);
   expect(response.body.data.createCategory.name).toBe("Test Category");
   expect(response.body.data.createCategory.description).toBe("Lorem Ipsum");
-  expect(response.body.data.createCategory.createdBy)
+  expect(response.body.data.createCategory.createdBy._id)
     .toEqual(firstUserSignupResponse.body.data.createUser._id);
   const user = await User.findOne({email: "abc1@email.com"}).lean();
   expect(user.categoriesCreated.length).toBe(1);

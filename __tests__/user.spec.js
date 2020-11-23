@@ -64,7 +64,7 @@ test("should signup new user", async () => {
     lastName: "1"
   });
   expect(response.body.data.createUser.email).toBe("abc1@email.com");
-  expect(response.body.data.createUser.phone).toBe(null);
+  expect(response.body.data.createUser.phone).toBe("0000000000");
   userId = response.body.data.createUser._id;
 });
 
@@ -172,7 +172,7 @@ test("admin should be able to block other users", async () => {
     expect(response.body.data.blockUser.result).toBe(userBlockResult);
     const organization = await Organization.findOne({}).lean();
     expect(organization.blockedUsers.length).toBe(1);
-    expect(organization.totalUsers).toBe(2);
+    expect(organization.totalUsers).toBe(1);
 });
 
 test("admin should be able to remove other users", async () => {
@@ -245,6 +245,9 @@ test("current user should be able to get topics created by him", async () => {
       query: `{ getSelfTopics {
       _id
       name
+      tags {
+        name
+      }
     }}`,
     })
     .set("Accept", "application/json")
@@ -253,6 +256,9 @@ test("current user should be able to get topics created by him", async () => {
   expect(response.status).toBe(200);
   expect(response.body.data.getSelfTopics.length).toBe(1);
   expect(response.body.data.getSelfTopics[0].name).toBe("Test Topic");
+  expect(response.body.data.getSelfTopics[0].tags.length).toBe(2);
+  expect(response.body.data.getSelfTopics[0].tags[0].name).toBe("Tag1");
+
 });
 
 test("current user should be able to get tasks created by him", async () => {
@@ -277,12 +283,14 @@ test("current user should be able to get tasks created by him", async () => {
 });
 
 test("current user should be able to get tasks assigned to him", async () => {
-  const secondUserLoginResponse = await testLoginUser(2);
+  const thirdUserCreationResponse = await testCreateUser(3);
+  const thirdUserLoginResponse = await testLoginUser(3);
+  const thirdUserId = thirdUserCreationResponse.body.data.createUser._id;
   const taskCreationResponse = await testCreateTask(
     firstUserToken, 
     topicId,
     undefined,
-    secondUserId,
+    thirdUserId,
   );
   const response = await request
     .post("/graphql")
@@ -294,7 +302,7 @@ test("current user should be able to get tasks assigned to him", async () => {
     }}`,
     })
     .set("Accept", "application/json")
-    .set("Authorization", `Bearer ${secondUserLoginResponse.body.data.login.token}`);
+    .set("Authorization", `Bearer ${thirdUserLoginResponse.body.data.login.token}`);
   expect(response.type).toBe("application/json");
   expect(response.status).toBe(200);
   expect(response.body.data.getAssignedTasks.length).toBe(1);
