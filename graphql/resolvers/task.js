@@ -6,10 +6,13 @@ const Topic = require("../../models/topic");
 const Task = require("../../models/task");
 const { 
   taskDeleteResult,
-  taskCompleteResult, } = require("../variables/resultMessages");
-const { authenticationError, 
+  taskCompleteResult, 
+} = require("../variables/resultMessages");
+const { 
+  authenticationError, 
   taskAlreadyCreatedError,
-  noAuthorizationError} = require("../variables/errorMessages");
+  noAuthorizationError, 
+} = require("../variables/errorMessages");
 
 module.exports = {
   createTask: async (args, req) => {
@@ -17,7 +20,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       let task, saveTask;
@@ -46,8 +49,8 @@ module.exports = {
             deadline: args.taskInput.deadline,
           });
           saveTask = await task.save();
-          saveTask._doc.description = message.description;
-          saveTask._doc.parentTopic = message.parentTopic;
+          saveTask.description = message.description;
+          saveTask.parentTopic = message.parentTopic;
           message.isTasked = true;
           await message.save();
         }
@@ -61,7 +64,7 @@ module.exports = {
           assignedUser.tasksAssigned.push(task);
           await assignedUser.save();
         }
-        return { ...saveTask._doc };
+        return saveTask;
       } else {
         throw new Error(topicArchivedError);
       }
@@ -77,7 +80,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const task = await Task.findById(args.taskInput._id);
@@ -95,10 +98,10 @@ module.exports = {
           const saveMessage = await message.save();
           task.deadline = args.taskInput.deadline;
           saveTask = await task.save();
-          saveTask._doc.description = saveMessage.description;
-          saveTask._doc.parentTopic = saveMessage.parentTopic;
+          saveTask.description = saveMessage.description;
+          saveTask.parentTopic = saveMessage.parentTopic;
         }
-        return { ...saveTask._doc };
+        return saveTask;
       } else {
         throw new Error(noAuthorizationError);
       }
@@ -114,7 +117,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const task = await Task.findById(args.taskFindInput._id);
@@ -165,7 +168,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const task = await Task.findById(args.taskFindInput._id);

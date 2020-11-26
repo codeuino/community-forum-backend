@@ -2,10 +2,10 @@ const User = require("../../models/user");
 const Topic = require("../../models/topic");
 const Category = require("../../models/category");
 const Message = require("../../models/message");
+const Tag = require("../../models/tag");
 const {
   authenticationError,
   topicRemovedError,
-  blockRemoveUserError,
   noAuthorizationError,
   categoryArchivedError,
 } = require("../variables/errorMessages");
@@ -17,7 +17,10 @@ const {
 module.exports = {
   topics: async () => {
     try {
-      let topics = await Topic.find({}).lean();
+      let topics = await Topic.find({}).populate({
+        path: "topics",
+        populate: { path: "createdBy tags" },
+      });
       return topics;
     } catch (err) {
       console.log(err);
@@ -30,21 +33,52 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
-      const category = await Category.findById(
+      let category = await Category.findById(
         args.topicInput.parentCategory
       ).lean();
       if (category.isArchived == false) {
         let topic = new Topic({
           name: args.topicInput.name,
           description: args.topicInput.description,
-          tags: args.topicInput.tags,
+          tagString: args.topicInput.tagString,
           parentCategory: args.topicInput.parentCategory,
           createdBy: req.currentUser.id,
         });
-        const saveTopic = await topic.save();
+        if(args.topicInput.tagString) {
+          let tagStringArray = args.topicInput.tagString.trim().split(" ");
+          tagStringArray.forEach((tagElement, index) => {
+            const tagElementNoSpace = tagElement.trim();
+            if (
+              !tagElementNoSpace.match(`/^\s*$/`) &&
+              tagElementNoSpace.length != 0
+            ) {
+              tagStringArray[index] =
+                tagElementNoSpace[0].toUpperCase() +
+                tagElementNoSpace.slice(1).toLowerCase();
+            }
+          });
+          let uniqueTagStringArray = [...new Set(tagStringArray)];
+          for (const stringTag of uniqueTagStringArray) {
+            if (stringTag.match(`/^\s*$/`) || stringTag.length == 0) {
+              continue;
+            }
+            let tag = await Tag.findOne({ name: stringTag });
+            if (tag) {
+              tag.topics.push(topic);
+            } else {
+              tag = new Tag({
+                name: stringTag,
+                topics: [topic],
+              });
+            }
+            await tag.save();
+            topic.tags.push(tag);
+          }
+        }
+        await topic.save();
         const saveCategory = await Category.findById(
           args.topicInput.parentCategory
         );
@@ -53,7 +87,10 @@ module.exports = {
         const user = await User.findById(req.currentUser.id);
         user.topicsCreated.push(topic);
         await user.save();
-        return { ...saveTopic._doc };
+        topic = await Topic.findById(topic._id).populate(
+          "createdBy tags"
+        );
+        return topic;
       } else {
         throw new Error(categoryArchivedError);
       }
@@ -68,19 +105,89 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
-      const topic = await Topic.findById(args.topicInput._id);
+      let topic = await Topic.findById(args.topicInput._id);
       if (
         topic.createdBy.toString() == req.currentUser.id ||
         req.currentUser.isModerator
       ) {
+        let oldTagStringArray = [];
+        let oldUniqueTagStringArray = [];
+        let newTagStringArray = [];
+        let newUniqueTagStringArray = [];
+        if (topic.tagString) {
+          oldTagStringArray = topic.tagString.trim().split(" ");
+          oldTagStringArray.forEach((tagElement, index) => {
+            const tagElementNoSpace = tagElement.trim();
+            if (
+              !tagElementNoSpace.match(`/^\s*$/`) &&
+              tagElementNoSpace.length != 0
+            ) {
+              oldTagStringArray[index] =
+                tagElementNoSpace[0].toUpperCase() +
+                tagElementNoSpace.slice(1).toLowerCase();
+            }
+          });
+          oldUniqueTagStringArray = [...new Set(oldTagStringArray)];
+        }
         topic.name = args.topicInput.name;
         topic.description = args.topicInput.description;
-        topic.tags = args.topicInput.tags;
-        const updateTopic = await topic.save();
-        return { ...updateTopic._doc };
+        topic.tagString = args.topicInput.tagString;
+        if (args.topicInput.tagString) {
+          newTagStringArray = args.topicInput.tagString.trim().split(" ");
+          newTagStringArray.forEach((tagElement, index) => {
+            const tagElementNoSpace = tagElement.trim();
+            if (
+              !tagElementNoSpace.match(`/^\s*$/`) &&
+              tagElementNoSpace.length != 0
+            ) {
+              newTagStringArray[index] =
+                tagElementNoSpace[0].toUpperCase() +
+                tagElementNoSpace.slice(1).toLowerCase();
+            }
+          });
+          newUniqueTagStringArray = [...new Set(newTagStringArray)];
+        }
+        const oldRemovableTags = oldUniqueTagStringArray.filter(
+          (tag) => !newUniqueTagStringArray.includes(tag)
+        );
+        for (const stringTag of oldRemovableTags) {
+          const tag = await Tag.findOne({ name: stringTag });
+          tag.topics = tag.topics.filter(
+            (topicId) => topicId.toString() != args.topicInput._id
+          );
+          if (tag.topics.length == 0) {
+            await tag.remove();
+          } else {
+            await tag.save();
+          }
+        }
+        const newAddableTags = newUniqueTagStringArray.filter(
+          (tag) => !oldUniqueTagStringArray.includes(tag)
+        );
+        for (const stringTag of newAddableTags) {
+          if (stringTag.match(`/^\s*$/`) || stringTag.length == 0) {
+            continue;
+          }
+          let tag = await Tag.findOne({ name: stringTag });
+          if (tag) {
+            tag.topics.push(topic);
+          } else {
+            tag = new Tag({
+              name: stringTag,
+              topics: [topic],
+            });
+          }
+          await tag.save();
+          topic.tags.push(tag);
+        }
+        await topic.save();
+        topic = await Topic.findById(args.topicInput._id).populate(
+          "createdBy tags"
+        );
+        return topic;
       }
       throw new Error(noAuthorizationError);
     } catch (err) {
@@ -94,7 +201,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const topic = await Topic.findById(args.topicFindInput._id);
@@ -102,6 +209,17 @@ module.exports = {
         topic.createdBy.toString() == req.currentUser.id ||
         req.currentUser.isModerator
       ) {
+        for (const stringTag of topic.tags) {
+          const tag = await Tag.findById(stringTag);
+          tag.topics = tag.topics.filter(
+            (topicId) => topicId.toString() != args.topicFindInput._id
+          );
+          if (tag.topics.length == 0) {
+            await tag.remove();
+          } else {
+            await tag.save();
+          }
+        }
         await topic.remove();
         await Message.deleteMany({ parentTopic: args.topicFindInput._id });
         const user = await User.findById(req.currentUser.id);
@@ -128,7 +246,7 @@ module.exports = {
       throw new Error(authenticationError);
     }
     if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-      throw new Error(blockRemoveUserError);
+      throw new Error(noAuthorizationError);
     }
     try {
       const topic = await Topic.findById(args.topicFindInput._id);

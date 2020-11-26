@@ -2,13 +2,15 @@ require("dotenv").config();
 const User = require("../../models/user");
 const Organization = require("../../models/organization");
 const {
+  noAuthorizationError,
   authenticationError,
-  userExistError,
+  userBlockedError,
   noOrganizationError,
   adminAccessError,
   firstAdminBlockError,
   firstAdminRemoveError,
   noUserError,
+  emailPasswordError,
 } = require("../variables/errorMessages");
 const {
   userBlockResult,
@@ -25,7 +27,7 @@ module.exports = {
       if (req.currentUser.isAdmin) {
         const users = await User.find(
           { isRemoved: false },
-          "name email info isAdmin isModerator isBlocked isRemoved"
+          "name email info isFirstAdmin isAdmin isModerator isBlocked isRemoved"
         );
         return users;
       } else {
@@ -38,19 +40,55 @@ module.exports = {
   },
 
   createUser: async (args) => {
+    if (!args.userInput.email || !args.userInput.password) {
+      throw new Error(emailPasswordError);
+    }
     try {
-      const existingUser = await User.findOne({
+      let existingUser = await User.findOne({
         email: args.userInput.email,
-      }).lean();
-      if (existingUser) {
-        throw new Error(userExistError);
-      }
+      });
       let user, organization;
       const users = await User.find({}).lean();
       const organizations = await Organization.find({}).lean();
-      if (users.length === 0) {
-        if (organizations.length === 0) {
-          throw new Error(noOrganizationError);
+      if (existingUser) {
+        if(existingUser.isBlocked) {
+          throw new Error(userBlockedError);
+        }
+        if (existingUser.isRemoved) {
+          organization = await Organization.findOne();
+          existingUser.name = args.userInput.name;
+          existingUser.password = args.userInput.password,
+          existingUser.phone = args.userInput.phone;
+          existingUser.info = args.userInput.info;
+          existingUser.info.about.designation = "";
+          existingUser.info.about.avatarUrl = "";
+          existingUser.socialMedia = null;
+          existingUser.isAdmin = false;
+          existingUser.isModerator = false;
+          existingUser.isRemoved = false;
+          existingUser = await existingUser.save();
+          organization.removedUsers = organization.removedUsers.filter(
+            (userId) => userId.toString() != existingUser.id
+          );
+        }
+      } else {
+        if (users.length === 0) {
+          if (organizations.length === 0) {
+            throw new Error(noOrganizationError);
+          } else {
+            organization = await Organization.findOne();
+            user = new User({
+              name: args.userInput.name,
+              email: args.userInput.email,
+              password: args.userInput.password,
+              phone: args.userInput.phone,
+              isFirstAdmin: true,
+              isAdmin: true,
+              isModerator: true,
+              info: args.userInput.info,
+            });
+            organization.adminIds.push(user);
+          }
         } else {
           organization = await Organization.findOne();
           user = new User({
@@ -58,24 +96,11 @@ module.exports = {
             email: args.userInput.email,
             password: args.userInput.password,
             phone: args.userInput.phone,
-            isFirstAdmin: true,
-            isAdmin: true,
-            isModerator: true,
             info: args.userInput.info,
           });
-          organization.adminIds.push(user);
         }
-      } else {
-        organization = await Organization.findOne();
-        user = new User({
-          name: args.userInput.name,
-          email: args.userInput.email,
-          password: args.userInput.password,
-          phone: args.userInput.phone,
-          info: args.userInput.info,
-        });
+        const saveUser = await user.save();
       }
-      const saveUser = await user.save();
       organization.totalUsers += 1;
       await organization.save();
       const loginResponse = await login({
@@ -94,19 +119,15 @@ module.exports = {
       throw new Error(authenticationError);
     }
     try {
-      let user = await User.updateOne(
-        { _id: req.currentUser.id },
-        {
-          $set: {
-            name: args.userInput.name,
-            phone: args.userInput.phone,
-            info: args.userInput.info,
-            socialMedia: args.userInput.socialMedia,
-          },
-        }
-      );
-
-      user = await User.findById(req.currentUser.id).lean();
+      if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+        throw new Error(noAuthorizationError);
+      }
+      let user = await User.findOne({ _id: req.currentUser.id });
+      user.name = args.userInput.name;
+      user.phone = args.userInput.phone;
+      user.info = args.userInput.info;
+      user.socialMedia = args.userInput.socialMedia;
+      user = await user.save();
       return user;
     } catch (err) {
       console.log(err);
@@ -120,6 +141,9 @@ module.exports = {
     }
     try {
       if (req.currentUser.isAdmin) {
+        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+          throw new Error(noAuthorizationError);
+        }
         let user;
         if (args.userFindInput.email) {
           user = await User.findOne({ email: args.userFindInput.email });
@@ -136,6 +160,7 @@ module.exports = {
         await user.save();
         const organization = await Organization.findOne();
         organization.blockedUsers.push(user);
+        organization.totalUsers -= 1;
         await organization.save();
         return { result: userBlockResult };
       } else {
@@ -191,9 +216,14 @@ module.exports = {
           throw new Error(firstAdminRemoveError);
         }
         if (req.currentUser.isAdmin) {
+          if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+            throw new Error(noAuthorizationError);
+          }
           user.isRemoved = true;
           await user.save();
-          organization.totalUsers -= 1;
+          if (!user.isBlocked) {
+            organization.totalUsers -= 1;
+          }
           if (user.isAdmin) {
             organization.adminIds = organization.adminIds.filter(
               (adminId) => adminId.toString() != user.id
@@ -222,10 +252,15 @@ module.exports = {
       throw new Error(authenticationError);
     }
     try {
-      const user = await User.findById(req.currentUser.id).populate(
-        "categoriesCreated",
-        "_id name description"
-      );
+      if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+        throw new Error(noAuthorizationError);
+      }
+      const user = await User.findById(
+        req.currentUser.id
+      ).populate({
+        path: "categoriesCreated",
+        populate: {path: "createdBy"}
+      });
       return user.categoriesCreated;
     } catch (err) {
       console.log(err);
@@ -238,10 +273,13 @@ module.exports = {
       throw new Error(authenticationError);
     }
     try {
-      const user = await User.findById(req.currentUser.id).populate(
-        "topicsCreated",
-        "_id name description"
-      );
+      if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+        throw new Error(noAuthorizationError);
+      }
+      const user = await User.findById(req.currentUser.id).populate({
+        path: "topicsCreated",
+        populate: { path: "createdBy tags" },
+      });
       return user.topicsCreated;
     } catch (err) {
       console.log(err);
@@ -254,6 +292,9 @@ module.exports = {
       throw new Error(authenticationError);
     }
     try {
+      if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+        throw new Error(noAuthorizationError);
+      }
       const user = await User.findById(req.currentUser.id).populate(
         "tasksAssigned"
       );
@@ -280,6 +321,9 @@ module.exports = {
       throw new Error(authenticationError);
     }
     try {
+      if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+        throw new Error(noAuthorizationError);
+      }
       const user = await User.findById(req.currentUser.id).populate(
         "tasksCreated"
       );

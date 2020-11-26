@@ -5,14 +5,19 @@ const User = require("../../models/user");
 const {
   passwordError,
   noUserError,
+  userRemovedError,
+  noAuthorizationError,
 } = require("../variables/errorMessages");
 
 module.exports = {
   login: async (args) => {
     try {
       const user = await User.findOne({ email: args.email }).lean();
-      if (!user) {
+      if (!user || user.isRemoved) {
         throw new Error(noUserError);
+      }
+      if(user.isBlocked) {
+        throw new Error(noAuthorizationError);
       }
       const isequal = await bcrypt.compare(args.password, user.password);
       if (!isequal) {
@@ -20,7 +25,7 @@ module.exports = {
       }
       const token = jwt.sign(
         {
-          id: user._id,
+          _id: user._id,
           name: user.name,
         },
         `${process.env.JWT_SECRET}`,
@@ -31,7 +36,26 @@ module.exports = {
       );
       return {
         ...user,
-        token: token,
+        token,
+      };
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  },
+
+  getCurrentUser: async (args) => {
+    try {
+      const user = await User.findById(args._id).lean();
+      if (!user || user.isRemoved) {
+        throw new Error(noUserError);
+      }
+      if (user.isBlocked) {
+        throw new Error(noAuthorizationError);
+      }
+      return {
+        ...user,
+        token: args.token,
       };
     } catch (err) {
       console.log(err);

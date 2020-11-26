@@ -5,11 +5,14 @@ const categorySchema = require("./category");
 const topicSchema = require("./topic");
 const messageSchema = require("./message");
 const taskSchema = require("./task");
+const tagSchema = require("./tag");
+
 
 module.exports = buildSchema(`
 scalar Date
 ${userSchema}
 ${organizationSchema}
+${tagSchema}
 ${categorySchema}
 ${topicSchema}
 ${messageSchema}
@@ -22,6 +25,7 @@ type resultData {
 type RootQuery {
   users: [user!]!
   login(email: String!, password: String!): authData!
+  getCurrentUser(_id: String!, token: String!): authData!
   getSelfCategories: [category!]!
   getSelfTopics: [topic!]!
   getAssignedTasks: [task!]!
@@ -34,6 +38,7 @@ type RootQuery {
   getTopicChats(topicFindInput: topicFindInput!): [message!]!
   getTask(taskFindInput: taskFindInput!): task!
   getTopicTasks(topicFindInput: topicFindInput!): [task!]!
+  getTagTopics(tagFindInput: tagFindInput!): [topic!]!
 }
 
 type RootMutation {
