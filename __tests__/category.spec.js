@@ -1,5 +1,6 @@
 const {
   categoryArchiveResult,
+  categoryUnarchiveResult,
   categoryDeleteResult,
 } = require("../graphql/variables/resultMessages");
 const {
@@ -70,6 +71,34 @@ test("should create a new category when user logged in", async () => {
   expect(user.categoriesCreated.length).toBe(1);
 });
 
+test("get a category", async () => {
+  const response = await request
+    .post("/graphql")
+    .send({
+      query: `{ getCategory( categoryFindInput: {
+        _id: "${categoryId}"
+      }) {
+      _id
+      name
+      description
+      createdBy {
+        _id
+        name {
+          firstName
+        }
+      }
+  }}`,
+    })
+    .set("Accept", "application/json");
+  expect(response.type).toBe("application/json");
+  expect(response.status).toBe(200);
+  expect(response.body.data.getCategory._id).toEqual(categoryId);
+  expect(response.body.data.getCategory.name).toBe("Test Category");
+  expect(response.body.data.getCategory.createdBy._id).toEqual(
+    firstUserSignupResponse.body.data.createUser._id
+  );
+});
+
 test("get all categories", async () => {
   const response = await request
     .post("/graphql")
@@ -101,13 +130,20 @@ test("get topics of a particular category", async () => {
       name
       description
       isArchived
+      createdBy {
+        _id
+      }
     }}`,
     })
     .set("Accept", "application/json");
     expect(response.body.data.getCategoryTopics.length).toBe(1)
     expect(response.body.data.getCategoryTopics[0].name).toBe("Test Topic")
     expect(response.body.data.getCategoryTopics[0].isArchived).toBe(false);
-});
+    expect(response.body.data.getCategoryTopics[0].createdBy._id).toEqual(
+      firstUserSignupResponse.body.data.createUser._id
+    );
+
+  });
 
 test("should not archive a category by any third user", async () => {
   const userSignupResponse = await testCreateUser(2);
@@ -154,6 +190,30 @@ test("should archive a category with admin/moderator/creator access", async () =
   const topics = await Topic.find().lean();
   expect(topics.length).toBe(1);
   expect(topics[0].isArchived).toBe(true);
+});
+
+test("should unarchive a category with admin/moderator/creator access", async () => {
+  const response = await request
+    .post("/graphql")
+    .send({
+      query: `mutation{ unarchiveCategory(
+        categoryFindInput: {
+          _id: "${categoryId}"
+        }
+      ) {
+        result
+      }}`,
+    })
+    .set("Accept", "application/json")
+    .set("Authorization", `Bearer ${firstUserToken}`);
+  expect(response.type).toBe("application/json");
+  expect(response.status).toBe(200);
+  expect(response.body.data.unarchiveCategory.result).toBe(categoryUnarchiveResult);
+  const category = await Category.findById(categoryId).lean();
+  expect(category.isArchived).toBe(false);
+  const topics = await Topic.find().lean();
+  expect(topics.length).toBe(1);
+  expect(topics[0].isArchived).toBe(false);
 });
 
 test("should update a category with admin/moderator/creator access", async () => {

@@ -71,6 +71,10 @@ const topicSchema = new Schema(
         },
       ],
     },
+    isSelfArchived: {
+      type: Boolean,
+      default: false,
+    },
     isArchived: {
       type: Boolean,
       default: false,

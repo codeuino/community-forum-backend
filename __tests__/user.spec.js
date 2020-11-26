@@ -1,5 +1,6 @@
 const { 
   userBlockResult,
+  userUnblockResult,
   userRemoveResult,
 } = require("../graphql/variables/resultMessages");
 const {
@@ -173,6 +174,26 @@ test("admin should be able to block other users", async () => {
     const organization = await Organization.findOne({}).lean();
     expect(organization.blockedUsers.length).toBe(1);
     expect(organization.totalUsers).toBe(1);
+});
+
+test("admin should be able to unblock other users", async () => {
+  const response = await request
+    .post("/graphql")
+    .send({
+      query: `mutation{ unblockUser(userFindInput: {
+      email: "abc2@email.com" 
+    }) {
+      result
+    }}`,
+    })
+    .set("Accept", "application/json")
+    .set("Authorization", `Bearer ${firstUserToken}`);
+  expect(response.type).toBe("application/json");
+  expect(response.status).toBe(200);
+  expect(response.body.data.unblockUser.result).toBe(userUnblockResult);
+  const organization = await Organization.findOne({}).lean();
+  expect(organization.blockedUsers.length).toBe(0);
+  expect(organization.totalUsers).toBe(2);
 });
 
 test("admin should be able to remove other users", async () => {

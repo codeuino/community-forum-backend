@@ -25,7 +25,7 @@ module.exports = {
     try {
       let task, saveTask;
       const topic = await Topic.findById(args.taskInput.parentTopic);
-      if (topic.isArchived == false) {
+      if (topic.isArchived == false && topic.isSelfArchived == false) {
         if (args.taskInput.attachedMessage == undefined) {
           task = new Task({
             userId: req.currentUser.id,

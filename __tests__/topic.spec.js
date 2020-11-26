@@ -147,7 +147,7 @@ test("should archive a topic with admin/moderator/creator access", async () => {
   expect(response.status).toBe(200);
   expect(response.body.data.archiveTopic.result).toBe(topicArchiveResult);
   const topic = await Topic.findById(topicId).lean();
-  expect(topic.isArchived).toBe(true);
+  expect(topic.isSelfArchived).toBe(true);
 });
 
 test("should update a topic with admin/moderator/creator access", async () => {

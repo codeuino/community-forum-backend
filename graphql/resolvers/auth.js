@@ -5,7 +5,7 @@ const User = require("../../models/user");
 const {
   passwordError,
   noUserError,
-  userRemovedError,
+  userBlockedError,
   noAuthorizationError,
 } = require("../variables/errorMessages");
 
@@ -17,7 +17,7 @@ module.exports = {
         throw new Error(noUserError);
       }
       if(user.isBlocked) {
-        throw new Error(noAuthorizationError);
+        throw new Error(userBlockedError);
       }
       const isequal = await bcrypt.compare(args.password, user.password);
       if (!isequal) {

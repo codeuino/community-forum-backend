@@ -19,17 +19,19 @@ type userAbout {
 }
 
 type user {
-  _id: String!
-  name: userName!
-  email: String!
+  _id: String
+  name: userName
+  email: String
   phone: String
   socialMedia: userSocialMedia
-  info: userInfo!
-  isFirstAdmin: Boolean!
-  isAdmin: Boolean!
-  isModerator: Boolean!
-  isBlocked: Boolean!
+  info: userInfo
+  isFirstAdmin: Boolean
+  isAdmin: Boolean
+  isModerator: Boolean
+  isBlocked: Boolean
   isRemoved: Boolean!
+  categoriesCreated: [category!]
+  topicsCreated: [topic!]
 }
 
 input userNameInput {

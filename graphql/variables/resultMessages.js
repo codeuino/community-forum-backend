@@ -1,5 +1,6 @@
 //users
 module.exports.userBlockResult = "User account has been blocked successfully";
+module.exports.userUnblockResult = "User account has been unblocked successfully";
 module.exports.userRemoveResult = "User account has been removed successfully";
 
 //organizations
@@ -16,6 +17,8 @@ module.exports.removeModeratorResult =
 //categories
 module.exports.categoryDeleteResult = "Category has been removed successfully";
 module.exports.categoryArchiveResult = "Category has been archived successfully";
+module.exports.categoryUnarchiveResult =
+  "Category has been unarchived successfully";
 
 //topics
 module.exports.topicDeleteResult = "Topic has been removed successfully";

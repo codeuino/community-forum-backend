@@ -8,6 +8,7 @@ type topic {
   tags: [tag!]
   chats: [String!]!
   isArchived: Boolean
+  isSelfArchived: Boolean
 }
 
 input topicInput {

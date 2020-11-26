@@ -33,6 +33,7 @@ type RootQuery {
   getOrganization: organization!
   getAdminModerators: adminModeratorsData!
   categories: [category!]!
+  getCategory(categoryFindInput: categoryFindInput!): category!
   getCategoryTopics(categoryFindInput: categoryFindInput!): [topic!]!
   topics: [topic!]!
   getTopicChats(topicFindInput: topicFindInput!): [message!]!
@@ -45,7 +46,9 @@ type RootMutation {
   createUser(userInput: userInput!): authData!
   updateUser(userInput: userInput!): user!
   blockUser(userFindInput: userFindInput!): resultData!
+  unblockUser(userFindInput: userFindInput!): resultData!
   removeUser(userFindInput: userFindInput!): resultData!
+  getUserProfile(userFindInput: userFindInput!): user!
   createOrganization(organizationInput: organizationInput!): resultData!
   updateOrganization(organizationInput: organizationInput!): organization!
   makeAdmin(userFindInput: userFindInput!): resultData!
@@ -54,6 +57,7 @@ type RootMutation {
   removeModerator(userFindInput: userFindInput!): resultData!
   createCategory(categoryInput: categoryInput!): category!
   archiveCategory(categoryFindInput: categoryFindInput!): resultData!
+  unarchiveCategory(categoryFindInput: categoryFindInput!): resultData!
   updateCategory(categoryInput: categoryInput!): category!
   deleteCategory(categoryFindInput: categoryFindInput!): resultData!
   createTopic(topicInput: topicInput!): topic!
