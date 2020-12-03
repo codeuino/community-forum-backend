@@ -39,7 +39,7 @@ type RootQuery {
   getTopicChats(topicFindInput: topicFindInput!): [message!]!
   getTask(taskFindInput: taskFindInput!): task!
   getTopicTasks(topicFindInput: topicFindInput!): [task!]!
-  getTagTopics(tagFindInput: tagFindInput!): [topic!]!
+  getTagTopics(tagFindInput: tagFindInput!): tag!
 }
 
 type RootMutation {
@@ -51,6 +51,7 @@ type RootMutation {
   getUserProfile(userFindInput: userFindInput!): user!
   createOrganization(organizationInput: organizationInput!): resultData!
   updateOrganization(organizationInput: organizationInput!): organization!
+  toggleMaintenanceMode: organization!
   makeAdmin(userFindInput: userFindInput!): resultData!
   makeModerator(userFindInput: userFindInput!): resultData!
   removeAdmin(userFindInput: userFindInput!): resultData!
