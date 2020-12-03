@@ -254,7 +254,10 @@ module.exports = {
         topic.createdBy.toString() == req.currentUser.id ||
         req.currentUser.isModerator
       ) {
-        topic.isArchived = true;
+        if (topic.isArchived == true) {
+          throw new Error(noAuthorizationError);
+        }
+        topic.isSelfArchived = true;
         await topic.save();
         return { result: topicArchiveResult };
       }

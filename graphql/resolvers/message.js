@@ -24,7 +24,7 @@ module.exports = {
     }
     try {
       const topic = await Topic.findById(args.messageInput.parentTopic).lean();
-      if (topic.isArchived == false) {
+      if (topic.isArchived == false && topic.isSelfArchived == false) {
         let message = new Message({
           userId: req.currentUser.id,
           description: args.messageInput.description,

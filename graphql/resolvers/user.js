@@ -14,6 +14,7 @@ const {
 } = require("../variables/errorMessages");
 const {
   userBlockResult,
+  userUnblockResult,
   userRemoveResult,
 } = require("../variables/resultMessages");
 const { login } = require("./auth");
@@ -51,7 +52,7 @@ module.exports = {
       const users = await User.find({}).lean();
       const organizations = await Organization.find({}).lean();
       if (existingUser) {
-        if(existingUser.isBlocked) {
+        if (existingUser.isBlocked) {
           throw new Error(userBlockedError);
         }
         if (existingUser.isRemoved) {
@@ -105,7 +106,7 @@ module.exports = {
       await organization.save();
       const loginResponse = await login({
         email: args.userInput.email,
-        password: args.userInput.password
+        password: args.userInput.password,
       });
       return loginResponse;
     } catch (err) {
@@ -156,6 +157,9 @@ module.exports = {
         if (user.isFirstAdmin) {
           throw new Error(firstAdminBlockError);
         }
+        if (user.isRemoved) {
+          throw new Error(noUserError);
+        }
         user.isBlocked = true;
         await user.save();
         const organization = await Organization.findOne();
@@ -163,6 +167,48 @@ module.exports = {
         organization.totalUsers -= 1;
         await organization.save();
         return { result: userBlockResult };
+      } else {
+        throw new Error(adminAccessError);
+      }
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  },
+
+  unblockUser: async (args, req) => {
+    if (!req.isAuth) {
+      throw new Error(authenticationError);
+    }
+    try {
+      if (req.currentUser.isAdmin) {
+        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+          throw new Error(noAuthorizationError);
+        }
+        let user;
+        if (args.userFindInput.email) {
+          user = await User.findOne({ email: args.userFindInput.email });
+        } else if (args.userFindInput._id) {
+          user = await User.findById(args.userFindInput._id);
+        }
+        if (!user) {
+          throw new Error(noUserError);
+        }
+        if (user.isFirstAdmin) {
+          throw new Error(noAuthorizationError);
+        }
+        if (user.isRemoved) {
+          throw new Error(noUserError);
+        }
+        user.isBlocked = false;
+        await user.save();
+        const organization = await Organization.findOne();
+        organization.blockedUsers = organization.blockedUsers.filter(
+          (userId) => userId.toString() != user.id
+        );
+        organization.totalUsers += 1;
+        await organization.save();
+        return { result: userUnblockResult };
       } else {
         throw new Error(adminAccessError);
       }
@@ -247,6 +293,27 @@ module.exports = {
     }
   },
 
+  getUserProfile: async (args, req) => {
+    try {
+      const user = await User.findById(args.userFindInput._id).populate({
+        path: "categoriesCreated topicsCreated",
+        populate: { path: "tags" },
+      });
+      if (!user) {
+        throw new Error(noUserError);
+      }
+      if (user.isRemoved) {
+        return {
+          isRemoved: true,
+        };
+      }
+      return user;
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  },
+
   getSelfCategories: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
@@ -255,11 +322,9 @@ module.exports = {
       if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
         throw new Error(noAuthorizationError);
       }
-      const user = await User.findById(
-        req.currentUser.id
-      ).populate({
+      const user = await User.findById(req.currentUser.id).populate({
         path: "categoriesCreated",
-        populate: {path: "createdBy"}
+        populate: { path: "createdBy" },
       });
       return user.categoriesCreated;
     } catch (err) {
