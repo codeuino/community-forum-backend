@@ -128,10 +128,15 @@ module.exports = {
         if (!user) {
           throw new Error(noUserError);
         }
+        const organization = await Organization.findOne({});
+        if (user.isModerator) {
+          organization.moderatorIds = organization.moderatorIds.filter(
+            (moderatorId) => moderatorId.toString() != user.id
+          );
+        }
         user.isAdmin = true;
         user.isModerator = true;
         await user.save();
-        const organization = await Organization.findOne({});
         organization.adminIds.push(user);
         await organization.save();
         return { result: madeAdminResult };
@@ -162,9 +167,15 @@ module.exports = {
         if (!user) {
           throw new Error(noUserError);
         }
+        const organization = await Organization.findOne({});
+        if (user.isAdmin) {
+          organization.adminIds = organization.adminIds.filter(
+            (adminId) => adminId.toString() != user.id
+          );
+        }
+        user.isAdmin = false;
         user.isModerator = true;
         await user.save();
-        const organization = await Organization.findOne({});
         organization.moderatorIds.push(user);
         await organization.save();
         return {
@@ -242,6 +253,7 @@ module.exports = {
         if (!user.isModerator) {
           throw new Error(noModeratorError);
         }
+        user.isAdmin = false;
         user.isModerator = false;
         await user.save();
         const organization = await Organization.findOne({});
@@ -271,31 +283,19 @@ module.exports = {
           throw new Error(noAuthorizationError);
         }
         const organization = await Organization.findOne({})
-          .populate("adminIds", [
-            "_id",
-            "name",
-            "email",
-            "info",
-            "isAdmin",
-            "isModerator",
-            "isActivated",
-            "isRemoved",
-            "isFirstAdmin",
-          ])
-          .populate("moderatorIds", [
-            "_id",
-            "name",
-            "email",
-            "info",
-            "isAdmin",
-            "isModerator",
-            "isActivated",
-            "isRemoved",
-            "isFirstAdmin",
-          ]);
+          .populate({
+            path: "adminIds",
+            options: { sort: { createdAt: -1 } },
+          })
+          .populate({
+            path: "moderatorIds",
+            options: { sort: { createdAt: -1 } },
+          });
+        let admins = organization.adminIds.filter(admin => !admin.isBlocked);
+        let moderators = organization.moderatorIds.filter(moderator => !moderator.isAdmin && !moderator.isBlocked);
         return {
-          admins: organization.adminIds,
-          moderators: organization.moderatorIds,
+          admins,
+          moderators,
         };
       } else {
         throw new Error(adminAccessError);

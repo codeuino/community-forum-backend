@@ -32,6 +32,7 @@ type user {
   isRemoved: Boolean!
   categoriesCreated: [category!]
   topicsCreated: [topic!]
+  createdAt: Date!
 }
 
 input userNameInput {
@@ -80,5 +81,10 @@ type authData {
   isBlocked: Boolean!
   isRemoved: Boolean!
   token: String!
+}
+
+type usersData {
+  users: [user!]!
+  blockedUsers: [user!]!
 }
 `;

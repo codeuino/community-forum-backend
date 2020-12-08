@@ -25,15 +25,25 @@ module.exports = {
       throw new Error(authenticationError);
     }
     try {
-      if (req.currentUser.isAdmin) {
-        const users = await User.find(
-          { isRemoved: false },
-          "name email info isFirstAdmin isAdmin isModerator isBlocked isRemoved"
-        );
-        return users;
-      } else {
-        throw new Error(adminAccessError);
+      const users = await User.find(
+        {
+          isRemoved: false,
+        },
+        "name email info isBlocked isAdmin isModerator createdAt"
+      ).sort([["createdAt", -1]]);
+      let blockedUsers = [];
+      let normalUsers = [];
+      for (const user of users) {
+        if (user.isBlocked === true) {
+          blockedUsers.push(user);
+        } else if (user.isAdmin == false && user.isModerator == false) {
+          normalUsers.push(user);
+        }
       }
+      return {
+        users: normalUsers,
+        blockedUsers,
+      };
     } catch (err) {
       console.log(err);
       throw err;
@@ -45,20 +55,18 @@ module.exports = {
       throw new Error(emailPasswordError);
     }
     try {
+      let user;
       let existingUser = await User.findOne({
         email: args.userInput.email,
       });
-      let user, organization;
-      const users = await User.find({}).lean();
-      const organizations = await Organization.find({}).lean();
+      const organization = await Organization.findOne({});
       if (existingUser) {
         if (existingUser.isBlocked) {
           throw new Error(userBlockedError);
         }
         if (existingUser.isRemoved) {
-          organization = await Organization.findOne();
           existingUser.name = args.userInput.name;
-          existingUser.password = args.userInput.password,
+          existingUser.password = args.userInput.password;
           existingUser.phone = args.userInput.phone;
           existingUser.info = args.userInput.info;
           existingUser.info.about.designation = "";
@@ -73,11 +81,11 @@ module.exports = {
           );
         }
       } else {
+        const users = await User.find({}).lean();
         if (users.length === 0) {
-          if (organizations.length === 0) {
+          if (!organization) {
             throw new Error(noOrganizationError);
           } else {
-            organization = await Organization.findOne();
             user = new User({
               name: args.userInput.name,
               email: args.userInput.email,
@@ -91,7 +99,6 @@ module.exports = {
             organization.adminIds.push(user);
           }
         } else {
-          organization = await Organization.findOne();
           user = new User({
             name: args.userInput.name,
             email: args.userInput.email,
@@ -100,7 +107,7 @@ module.exports = {
             info: args.userInput.info,
           });
         }
-        const saveUser = await user.save();
+        await user.save();
       }
       organization.totalUsers += 1;
       await organization.save();
@@ -124,6 +131,12 @@ module.exports = {
         throw new Error(noAuthorizationError);
       }
       let user = await User.findOne({ _id: req.currentUser.id });
+      if (!user || user.isRemoved) {
+        throw new Error(noUserError);
+      }
+      if (user.isBlocked) {
+        throw new Error(userBlockedError);
+      }
       user.name = args.userInput.name;
       user.phone = args.userInput.phone;
       user.info = args.userInput.info;
@@ -151,18 +164,15 @@ module.exports = {
         } else if (args.userFindInput._id) {
           user = await User.findById(args.userFindInput._id);
         }
-        if (!user) {
+        if (!user || user.isRemoved) {
           throw new Error(noUserError);
         }
         if (user.isFirstAdmin) {
           throw new Error(firstAdminBlockError);
         }
-        if (user.isRemoved) {
-          throw new Error(noUserError);
-        }
         user.isBlocked = true;
         await user.save();
-        const organization = await Organization.findOne();
+        const organization = await Organization.findOne({});
         organization.blockedUsers.push(user);
         organization.totalUsers -= 1;
         await organization.save();
@@ -191,14 +201,11 @@ module.exports = {
         } else if (args.userFindInput._id) {
           user = await User.findById(args.userFindInput._id);
         }
-        if (!user) {
+        if (!user || user.isRemoved) {
           throw new Error(noUserError);
         }
         if (user.isFirstAdmin) {
           throw new Error(noAuthorizationError);
-        }
-        if (user.isRemoved) {
-          throw new Error(noUserError);
         }
         user.isBlocked = false;
         await user.save();
@@ -227,7 +234,7 @@ module.exports = {
       const organization = await Organization.findOne();
       if (!args.userFindInput.email && !args.userFindInput._id) {
         user = await User.findById(req.currentUser.id);
-        if (!user) {
+        if (!user || user.isRemoved) {
           throw new Error(noUserError);
         }
         if (user.isFirstAdmin) {
@@ -255,7 +262,7 @@ module.exports = {
         } else if (args.userFindInput._id) {
           user = await User.findById(args.userFindInput._id);
         }
-        if (!user) {
+        if (!user || user.isRemoved) {
           throw new Error(noUserError);
         }
         if (user.isFirstAdmin) {
