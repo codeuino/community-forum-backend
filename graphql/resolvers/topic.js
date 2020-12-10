@@ -14,6 +14,9 @@ const {
   topicDeleteResult,
   topicArchiveResult,
 } = require("../variables/resultMessages");
+const {
+  findUniqueTags,
+} = require("../utils/findUniqueTags");
 
 module.exports = {
   topics: async () => {
@@ -52,23 +55,8 @@ module.exports = {
           createdBy: req.currentUser.id,
         });
         if(args.topicInput.tagString) {
-          let tagStringArray = args.topicInput.tagString.trim().split(" ");
-          tagStringArray.forEach((tagElement, index) => {
-            const tagElementNoSpace = tagElement.trim();
-            if (
-              !tagElementNoSpace.match(`/^\s*$/`) &&
-              tagElementNoSpace.length != 0
-            ) {
-              tagStringArray[index] =
-                tagElementNoSpace[0].toUpperCase() +
-                tagElementNoSpace.slice(1).toLowerCase();
-            }
-          });
-          let uniqueTagStringArray = [...new Set(tagStringArray)];
+          let uniqueTagStringArray = findUniqueTags(args.topicInput.tagString);
           for (const stringTag of uniqueTagStringArray) {
-            if (stringTag.match(`/^\s*$/`) || stringTag.length == 0) {
-              continue;
-            }
             let tag = await Tag.findOne({ name: stringTag });
             if (tag) {
               tag.topics.push(topic);
@@ -117,42 +105,16 @@ module.exports = {
         topic.createdBy.toString() == req.currentUser.id ||
         req.currentUser.isModerator
       ) {
-        let oldTagStringArray = [];
         let oldUniqueTagStringArray = [];
-        let newTagStringArray = [];
         let newUniqueTagStringArray = [];
         if (topic.tagString) {
-          oldTagStringArray = topic.tagString.trim().split(" ");
-          oldTagStringArray.forEach((tagElement, index) => {
-            const tagElementNoSpace = tagElement.trim();
-            if (
-              !tagElementNoSpace.match(`/^\s*$/`) &&
-              tagElementNoSpace.length != 0
-            ) {
-              oldTagStringArray[index] =
-                tagElementNoSpace[0].toUpperCase() +
-                tagElementNoSpace.slice(1).toLowerCase();
-            }
-          });
-          oldUniqueTagStringArray = [...new Set(oldTagStringArray)];
+          oldUniqueTagStringArray = findUniqueTags(topic.tagString);
         }
         topic.name = args.topicInput.name;
         topic.description = args.topicInput.description;
         topic.tagString = args.topicInput.tagString;
         if (args.topicInput.tagString) {
-          newTagStringArray = args.topicInput.tagString.trim().split(" ");
-          newTagStringArray.forEach((tagElement, index) => {
-            const tagElementNoSpace = tagElement.trim();
-            if (
-              !tagElementNoSpace.match(`/^\s*$/`) &&
-              tagElementNoSpace.length != 0
-            ) {
-              newTagStringArray[index] =
-                tagElementNoSpace[0].toUpperCase() +
-                tagElementNoSpace.slice(1).toLowerCase();
-            }
-          });
-          newUniqueTagStringArray = [...new Set(newTagStringArray)];
+          newUniqueTagStringArray = findUniqueTags(args.topicInput.tagString);
         }
         const oldRemovableTags = oldUniqueTagStringArray.filter(
           (tag) => !newUniqueTagStringArray.includes(tag)
@@ -172,9 +134,6 @@ module.exports = {
           (tag) => !oldUniqueTagStringArray.includes(tag)
         );
         for (const stringTag of newAddableTags) {
-          if (stringTag.match(`/^\s*$/`) || stringTag.length == 0) {
-            continue;
-          }
           let tag = await Tag.findOne({ name: stringTag });
           if (tag) {
             tag.topics.push(topic);

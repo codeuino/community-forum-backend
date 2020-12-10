@@ -40,4 +40,9 @@ type adminModeratorsData {
   admins: [user!]!
   moderators: [user!]!
 }
+
+type organizationData {
+  categories: Int
+  topics: Int
+}
 `;

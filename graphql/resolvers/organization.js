@@ -1,6 +1,9 @@
 require("dotenv").config();
 const User = require("../../models/user");
 const Organization = require("../../models/organization");
+const Category = require("../../models/category");
+const Topic = require("../../models/topic");
+
 const { 
   organizationCreatedResult, 
   madeAdminResult, 
@@ -292,7 +295,9 @@ module.exports = {
             options: { sort: { createdAt: -1 } },
           });
         let admins = organization.adminIds.filter(admin => !admin.isBlocked);
-        let moderators = organization.moderatorIds.filter(moderator => !moderator.isAdmin && !moderator.isBlocked);
+        let moderators = organization.moderatorIds.filter(
+          moderator => !moderator.isAdmin && !moderator.isBlocked
+        );
         return {
           admins,
           moderators,
@@ -305,4 +310,28 @@ module.exports = {
       throw err;
     }
   },
+
+  getOrganizationData: async (args, req) => {
+    if (!req.isAuth) {
+      throw new Error(authenticationError);
+    }
+    try {
+      if (req.currentUser.isAdmin) {
+        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+          throw new Error(noAuthorizationError);
+        }
+        const categories = await Category.estimatedDocumentCount();
+        const topics = await Topic.estimatedDocumentCount();
+        return {
+          categories,
+          topics,
+        };
+      } else {
+        throw new Error(adminAccessError);
+      }
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  }
 };

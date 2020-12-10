@@ -23,6 +23,7 @@ module.exports = {
       .set("Accept", "application/json");
     return response;
   },
+  
   testCreateUser: async (userNo) => {
     const response = await request
       .post("/graphql")
@@ -64,6 +65,7 @@ module.exports = {
       .set("Accept", "application/json");
     return response;
   },
+
   testLoginUser: async (userNo) => {
     const response = await request
       .post("/graphql")
@@ -95,6 +97,7 @@ module.exports = {
       .set("Accept", "application/json");
     return response;
   },
+  
   testCreateCategory: async (token) => {
     const response = await request
       .post("/graphql")
@@ -120,6 +123,7 @@ module.exports = {
       .set("Authorization", `Bearer ${token}`);
     return response;
   },
+
   testCreateTopic: async (token, categoryId) => {
     const response = await request
       .post("/graphql")
@@ -152,6 +156,7 @@ module.exports = {
       .set("Authorization", `Bearer ${token}`);
     return response;
   },
+
   testCreateMessage: async (token, topicId) => {
     const response = await request
       .post("/graphql")
@@ -171,6 +176,7 @@ module.exports = {
       .set("Authorization", `Bearer ${token}`);
     return response;
   },
+
   testCreateTask: async (
     token,
     topicId,
