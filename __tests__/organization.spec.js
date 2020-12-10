@@ -337,7 +337,7 @@ test("demote provided moderator to user by another admin using Id", async () => 
   expect(demotedUser.isModerator).toBe(false);
 });
 
-test("get all admins and moderators", async () => {
+test("get all admins and moderators with admin authorization", async () => {
   const userLoginResponse = await testLoginUser(1);
   const token = userLoginResponse.body.data.login.token;
   const response = await request
@@ -368,4 +368,23 @@ test("get all admins and moderators", async () => {
   expect(response.body.data.getAdminModerators.admins.length).toBe(1);
   expect(response.body.data.getAdminModerators.moderators.length).toBe(0);
   expect(response.body.data.getAdminModerators.admins[0].isFirstAdmin).toBe(true);
+});
+
+test("get more organization details with admin authorization", async () => {
+  const userLoginResponse = await testLoginUser(1);
+  const token = userLoginResponse.body.data.login.token;
+  const response = await request
+    .post("/graphql")
+    .send({
+      query: `{ getOrganizationData {
+        categories
+        topics
+      }}`,
+    })
+    .set("Accept", "application/json")
+    .set("Authorization", `Bearer ${token}`);
+  expect(response.type).toBe("application/json");
+  expect(response.status).toBe(200);
+  expect(response.body.data.getOrganizationData.categories).toBe(0);
+  expect(response.body.data.getOrganizationData.topics).toBe(0);
 });

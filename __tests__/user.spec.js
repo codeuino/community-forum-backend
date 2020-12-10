@@ -69,7 +69,7 @@ test("should signup new user", async () => {
   userId = response.body.data.createUser._id;
 });
 
-test("get all users via admin authorization", async () => {
+test("get all users", async () => {
   firstUserLoginResponse = await testLoginUser(1);
   firstUserToken = firstUserLoginResponse.body.data.login.token;
   const response = await request
