@@ -66,9 +66,35 @@ module.exports = {
         if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
           throw new Error(noAuthorizationError);
         }
-        organization.name = args.organizationInput.name,
-        organization.description = args.organizationInput.description,
-        organization.contactInfo = args.organizationInput.contactInfo,
+        organization.name = args.organizationInput.name;
+        organization.description = args.organizationInput.description;
+        organization.contactInfo = args.organizationInput.contactInfo;
+        await organization.save();
+        organization = await Organization.findOne().lean();
+        return {
+          ...organization,
+          exists: true,
+        };
+      } else {
+        throw new Error(adminAccessError);
+      }
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  },
+
+  toggleMaintenanceMode: async (args, req) => {
+    if (!req.isAuth) {
+      throw new Error(authenticationError);
+    }
+    try {
+      let organization = await Organization.findOne({});
+      if (req.currentUser.isAdmin && organization) {
+        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+          throw new Error(noAuthorizationError);
+        }
+        organization.isUnderMaintenance = !organization.isUnderMaintenance;
         await organization.save();
         organization = await Organization.findOne().lean();
         return {
@@ -174,7 +200,7 @@ module.exports = {
         if (user.isFirstAdmin) {
           throw new Error(firstAdminDemoteError);
         }
-        if(!user.isAdmin) {
+        if (!user.isAdmin) {
           throw new Error(noAdminError);
         }
         user.isAdmin = false;

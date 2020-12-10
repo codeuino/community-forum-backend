@@ -13,7 +13,7 @@ module.exports = {
       if (!tag) {
         throw new Error(tagRemovedError);
       }
-      return tag.topics;
+      return tag;
     } catch (err) {
       console.log(err);
       throw err;

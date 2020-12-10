@@ -1,7 +1,8 @@
 const createError = require("http-errors");
 const express = require("express");
 const path = require("path");
-const isAuth = require("./middleware/is-auth");
+const isAuth = require("./middleware/isAuth");
+const isUnderMaintenance = require("./middleware/isUnderMaintenance");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
@@ -27,6 +28,7 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.use(isAuth);
+app.use(isUnderMaintenance);
 
 io.sockets.on("connection", function (socket, client) {
   console.log("client connected!");

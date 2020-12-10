@@ -68,13 +68,16 @@ test("get all topics having a particular tag", async () => {
         }
       ) {
       _id
-      name
-      description
+      topics {
+        _id
+        name
+        description
+      }
   }}`,
     })
     .set("Accept", "application/json");
   expect(response.type).toBe("application/json");
   expect(response.status).toBe(200);
-  expect(response.body.data.getTagTopics.length).toBe(1);
-  expect(response.body.data.getTagTopics[0].name).toBe("Test Topic");
+  expect(response.body.data.getTagTopics.topics.length).toBe(1);
+  expect(response.body.data.getTagTopics.topics[0].name).toBe("Test Topic");
 });
