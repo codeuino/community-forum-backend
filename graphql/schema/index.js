@@ -23,9 +23,10 @@ type resultData {
 }
 
 type RootQuery {
-  users: [user!]!
+  users: usersData!
   login(email: String!, password: String!): authData!
   getCurrentUser(_id: String!, token: String!): authData!
+  getUserProfile(userFindInput: userFindInput!): user!
   getSelfCategories: [category!]!
   getSelfTopics: [topic!]!
   getAssignedTasks: [task!]!
@@ -48,7 +49,6 @@ type RootMutation {
   blockUser(userFindInput: userFindInput!): resultData!
   unblockUser(userFindInput: userFindInput!): resultData!
   removeUser(userFindInput: userFindInput!): resultData!
-  getUserProfile(userFindInput: userFindInput!): user!
   createOrganization(organizationInput: organizationInput!): resultData!
   updateOrganization(organizationInput: organizationInput!): organization!
   toggleMaintenanceMode: organization!

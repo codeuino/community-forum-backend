@@ -5,6 +5,7 @@ const Message = require("../../models/message");
 const Tag = require("../../models/tag");
 const {
   authenticationError,
+  categoryRemovedError,
   topicRemovedError,
   noAuthorizationError,
   categoryArchivedError,
@@ -36,10 +37,13 @@ module.exports = {
       throw new Error(noAuthorizationError);
     }
     try {
-      let category = await Category.findById(
+      const category = await Category.findById(
         args.topicInput.parentCategory
-      ).lean();
-      if (category.isArchived == false) {
+      );
+      if (!category) {
+        throw new Error(categoryRemovedError);
+      }
+      if (category.isArchived === false) {
         let topic = new Topic({
           name: args.topicInput.name,
           description: args.topicInput.description,
@@ -79,11 +83,8 @@ module.exports = {
           }
         }
         await topic.save();
-        const saveCategory = await Category.findById(
-          args.topicInput.parentCategory
-        );
-        saveCategory.topics.push(topic);
-        await saveCategory.save();
+        category.topics.push(topic);
+        await category.save();
         const user = await User.findById(req.currentUser.id);
         user.topicsCreated.push(topic);
         await user.save();
@@ -109,6 +110,9 @@ module.exports = {
     }
     try {
       let topic = await Topic.findById(args.topicInput._id);
+      if (!topic) {
+        throw new Error(topicRemovedError);
+      }
       if (
         topic.createdBy.toString() == req.currentUser.id ||
         req.currentUser.isModerator
@@ -205,6 +209,9 @@ module.exports = {
     }
     try {
       const topic = await Topic.findById(args.topicFindInput._id);
+      if (!topic) {
+        throw new Error(topicRemovedError);
+      }
       if (
         topic.createdBy.toString() == req.currentUser.id ||
         req.currentUser.isModerator
@@ -228,6 +235,9 @@ module.exports = {
         );
         await user.save();
         const category = await Category.findById(topic.parentCategory);
+        if (!category) {
+          throw new Error(categoryRemovedError);
+        }
         category.topics = category.topics.filter(
           (topicId) => topicId.toString() != args.topicFindInput._id
         );
@@ -250,6 +260,9 @@ module.exports = {
     }
     try {
       const topic = await Topic.findById(args.topicFindInput._id);
+      if (!topic) {
+        throw new Error(topicRemovedError);
+      }
       if (
         topic.createdBy.toString() == req.currentUser.id ||
         req.currentUser.isModerator

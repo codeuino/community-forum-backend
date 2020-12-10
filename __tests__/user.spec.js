@@ -76,20 +76,27 @@ test("get all users via admin authorization", async () => {
     .post("/graphql")
     .send({
       query: `{ users {
-      _id
-      name {
-        firstName
+      users {
+        _id
+        name {
+          firstName
+        }
+        email
       }
-      email
+      blockedUsers {
+        _id
+        name {
+          firstName
+        }
+        email
+      }
   }}`,
     })
     .set("Accept", "application/json")
     .set("Authorization", `Bearer ${firstUserToken}`);
   expect(response.type).toBe("application/json");
   expect(response.status).toBe(200);
-  expect(response.body.data.users.length).toBe(1);
-  expect(response.body.data.users[0].name.firstName).toBe("TestUser");
-  expect(response.body.data.users[0].email).toBe("abc1@email.com");
+  expect(response.body.data.users.users.length).toBe(0);
 });
 
 test("should not update user details if logged out", async () => {
