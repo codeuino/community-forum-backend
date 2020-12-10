@@ -33,6 +33,7 @@ type RootQuery {
   getCreatedTasks: [task!]!
   getOrganization: organization!
   getAdminModerators: adminModeratorsData!
+  getOrganizationData: organizationData!
   categories: [category!]!
   getCategory(categoryFindInput: categoryFindInput!): category!
   getCategoryTopics(categoryFindInput: categoryFindInput!): [topic!]!
