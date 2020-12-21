@@ -8,6 +8,10 @@ const {
   userBlockedError,
   noAuthorizationError,
 } = require("../variables/errorMessages");
+const {
+  tokenAlgorithm,
+  tokenExpiry,
+} = require("../variables/secretKeys");
 
 module.exports = {
   login: async (args) => {
@@ -30,8 +34,8 @@ module.exports = {
         },
         `${process.env.JWT_SECRET}`,
         {
-          algorithm: "HS256",
-          expiresIn: "30d",
+          algorithm: tokenAlgorithm,
+          expiresIn: tokenExpiry,
         }
       );
       return {

@@ -11,6 +11,8 @@ const {
   firstAdminRemoveError,
   noUserError,
   emailPasswordError,
+  alreadyBlockedError,
+  alreadyRemovedError,
 } = require("../variables/errorMessages");
 const {
   userBlockResult,
@@ -30,7 +32,9 @@ module.exports = {
           isRemoved: false,
         },
         "name email info isBlocked isAdmin isModerator createdAt"
-      ).sort([["createdAt", -1]]);
+      )
+        .sort([["createdAt", -1]])
+        .lean();
       let blockedUsers = [];
       let normalUsers = [];
       for (const user of users) {
@@ -122,6 +126,29 @@ module.exports = {
     }
   },
 
+  getUserProfile: async (args, req) => {
+    try {
+      const user = await User.findById(args.userFindInput._id)
+        .populate({
+          path: "categoriesCreated topicsCreated",
+          populate: { path: "tags" },
+        })
+        .lean();
+      if (!user) {
+        throw new Error(noUserError);
+      }
+      if (user.isRemoved) {
+        return {
+          isRemoved: true,
+        };
+      }
+      return user;
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  },
+
   updateUser: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
@@ -131,12 +158,6 @@ module.exports = {
         throw new Error(noAuthorizationError);
       }
       let user = await User.findOne({ _id: req.currentUser.id });
-      if (!user || user.isRemoved) {
-        throw new Error(noUserError);
-      }
-      if (user.isBlocked) {
-        throw new Error(userBlockedError);
-      }
       user.name = args.userInput.name;
       user.phone = args.userInput.phone;
       user.info = args.userInput.info;
@@ -169,6 +190,9 @@ module.exports = {
         }
         if (user.isFirstAdmin) {
           throw new Error(firstAdminBlockError);
+        }
+        if (user.isBlocked) {
+          throw new Error(alreadyBlockedError);
         }
         user.isBlocked = true;
         await user.save();
@@ -240,6 +264,9 @@ module.exports = {
         if (user.isFirstAdmin) {
           throw new Error(firstAdminRemoveError);
         }
+        if (user.isRemoved) {
+          throw new Error(alreadyRemovedError);
+        }
         user.isRemoved = true;
         await user.save();
         organization.totalUsers -= 1;
@@ -267,6 +294,9 @@ module.exports = {
         }
         if (user.isFirstAdmin) {
           throw new Error(firstAdminRemoveError);
+        }
+        if (user.isRemoved) {
+          throw new Error(alreadyRemovedError);
         }
         if (req.currentUser.isAdmin) {
           if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
@@ -300,27 +330,6 @@ module.exports = {
     }
   },
 
-  getUserProfile: async (args, req) => {
-    try {
-      const user = await User.findById(args.userFindInput._id).populate({
-        path: "categoriesCreated topicsCreated",
-        populate: { path: "tags" },
-      });
-      if (!user) {
-        throw new Error(noUserError);
-      }
-      if (user.isRemoved) {
-        return {
-          isRemoved: true,
-        };
-      }
-      return user;
-    } catch (err) {
-      console.log(err);
-      throw err;
-    }
-  },
-
   getSelfCategories: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
@@ -329,10 +338,12 @@ module.exports = {
       if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
         throw new Error(noAuthorizationError);
       }
-      const user = await User.findById(req.currentUser.id).populate({
-        path: "categoriesCreated",
-        populate: { path: "createdBy" },
-      });
+      const user = await User.findById(req.currentUser.id)
+        .populate({
+          path: "categoriesCreated",
+          populate: { path: "createdBy" },
+        })
+        .lean();
       return user.categoriesCreated;
     } catch (err) {
       console.log(err);
@@ -348,10 +359,12 @@ module.exports = {
       if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
         throw new Error(noAuthorizationError);
       }
-      const user = await User.findById(req.currentUser.id).populate({
-        path: "topicsCreated",
-        populate: { path: "createdBy tags" },
-      });
+      const user = await User.findById(req.currentUser.id)
+        .populate({
+          path: "topicsCreated",
+          populate: { path: "createdBy tags" },
+        })
+        .lean();
       return user.topicsCreated;
     } catch (err) {
       console.log(err);
@@ -367,9 +380,9 @@ module.exports = {
       if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
         throw new Error(noAuthorizationError);
       }
-      const user = await User.findById(req.currentUser.id).populate(
-        "tasksAssigned"
-      );
+      const user = await User.findById(req.currentUser.id)
+        .populate("tasksAssigned")
+        .lean();
       user.tasksAssigned = user.tasksAssigned.filter((task) => {
         return !task.isCompleted;
       });
@@ -396,9 +409,9 @@ module.exports = {
       if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
         throw new Error(noAuthorizationError);
       }
-      const user = await User.findById(req.currentUser.id).populate(
-        "tasksCreated"
-      );
+      const user = await User.findById(req.currentUser.id)
+        .populate("tasksCreated")
+        .lean();
       user.tasksCreated = user.tasksCreated.filter((task) => {
         return !task.isCompleted;
       });
@@ -417,5 +430,5 @@ module.exports = {
     }
   },
 
-  //forgot password resolver to be added
+  //TBD: Forgot password functionality
 };

@@ -9,10 +9,6 @@ const messageSchema = new Schema(
       ref: "User",
       required: true,
     },
-    replyTo: {
-      type: Schema.Types.ObjectId,
-      ref: "Message",
-    },
     description: {
       type: String,
       required: true,
@@ -23,14 +19,18 @@ const messageSchema = new Schema(
         }
       },
     },
-    likes: {
-      type: Number,
-      default: 0,
+    replyTo: {
+      type: Schema.Types.ObjectId,
+      ref: "Message",
     },
     parentTopic: {
       type: Schema.Types.ObjectId,
       ref: "Topic",
       required: true,
+    },
+    likes: {
+      type: Number,
+      default: 0,
     },
     isPinned: {
       type: Boolean,

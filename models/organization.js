@@ -44,11 +44,7 @@ const orgSchema = new Schema(
         },
       },
     },
-    //image upload functionality to be added
-    image: {
-      data: Buffer,
-      contentType: String,
-    },
+    //TBD: Image upload functionality
     imgUrl: {
       type: String,
       trim: true,
@@ -58,7 +54,6 @@ const orgSchema = new Schema(
         }
       },
     },
-    /////////////////
     contactInfo: {
       email: {
         type: String,
@@ -102,14 +97,6 @@ const orgSchema = new Schema(
         },
       ],
     },
-    isArchived: {
-      type: Boolean,
-      default: false,
-    },
-    isUnderMaintenance: {
-      type: Boolean,
-      default: false,
-    },
     blockedUsers: [
       {
         type: Schema.Types.ObjectId,
@@ -125,6 +112,10 @@ const orgSchema = new Schema(
     totalUsers: {
       type: Number,
       default: 0,
+    },
+    isUnderMaintenance: {
+      type: Boolean,
+      default: false,
     },
   },
   {

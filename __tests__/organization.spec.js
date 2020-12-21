@@ -20,6 +20,8 @@ const request = supertest(app);
 const mongoose = require("mongoose");
 const Organization = require("../models/organization");
 const User = require("../models/user");
+const Category = require("../models/category");
+const Topic = require("../models/topic");
 const server = require("../app").server;
 const jwt = require("jsonwebtoken");
 
@@ -30,6 +32,8 @@ beforeAll(async (done) => {
   console.log(`Test: listening on ${process.env.PORT}`);
   await Organization.deleteMany({});
   await User.deleteMany({});
+  await Category.deleteMany({});
+  await Topic.deleteMany({});
   await done();
 });
 

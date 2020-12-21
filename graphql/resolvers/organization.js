@@ -3,22 +3,26 @@ const User = require("../../models/user");
 const Organization = require("../../models/organization");
 const Category = require("../../models/category");
 const Topic = require("../../models/topic");
-
 const { 
   organizationCreatedResult, 
   madeAdminResult, 
   madeModeratorResult, 
   removeAdminResult, 
-  removeModeratorResult } = require("../variables/resultMessages");
+  removeModeratorResult,
+} = require("../variables/resultMessages");
 const {
   noAuthorizationError,
   authenticationError, 
   adminAccessError, 
   noUserError, 
-  organizationExistError, 
+  organizationExistError,
+  organizationNotExistError, 
   firstAdminDemoteError, 
   noAdminError, 
-  noModeratorError } = require("../variables/errorMessages");
+  noModeratorError,
+  alreadyAdminError,
+  alreadyModeratorError,
+} = require("../variables/errorMessages");
 
 module.exports = {
   createOrganization: async (args) => {
@@ -59,24 +63,20 @@ module.exports = {
     }
   },
 
-  updateOrganization: async (args, req) => {
+  getOrganizationData: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
     try {
-      let organization = await Organization.findOne({});
-      if (req.currentUser.isAdmin && organization) {
-        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-          throw new Error(noAuthorizationError);
-        }
-        organization.name = args.organizationInput.name;
-        organization.description = args.organizationInput.description;
-        organization.contactInfo = args.organizationInput.contactInfo;
-        await organization.save();
-        organization = await Organization.findOne().lean();
+      if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+        throw new Error(noAuthorizationError);
+      }
+      if (req.currentUser.isAdmin) {
+        const categories = await Category.estimatedDocumentCount();
+        const topics = await Topic.estimatedDocumentCount();
         return {
-          ...organization,
-          exists: true,
+          categories,
+          topics,
         };
       } else {
         throw new Error(adminAccessError);
@@ -87,23 +87,65 @@ module.exports = {
     }
   },
 
-  toggleMaintenanceMode: async (args, req) => {
+  getAdminModerators: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
     try {
-      let organization = await Organization.findOne({});
-      if (req.currentUser.isAdmin && organization) {
-        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-          throw new Error(noAuthorizationError);
-        }
-        organization.isUnderMaintenance = !organization.isUnderMaintenance;
-        await organization.save();
-        organization = await Organization.findOne().lean();
+      if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+        throw new Error(noAuthorizationError);
+      }
+      if (req.currentUser.isAdmin) {
+        const organization = await Organization.findOne({})
+          .populate({
+            path: "adminIds",
+            options: { sort: { createdAt: -1 } },
+          })
+          .populate({
+            path: "moderatorIds",
+            options: { sort: { createdAt: -1 } },
+          })
+          .lean();
+        let admins = organization.adminIds.filter((admin) => !admin.isBlocked);
+        let moderators = organization.moderatorIds.filter(
+          (moderator) => !moderator.isAdmin && !moderator.isBlocked
+        );
         return {
-          ...organization,
-          exists: true,
+          admins,
+          moderators,
         };
+      } else {
+        throw new Error(adminAccessError);
+      }
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  },
+
+  updateOrganization: async (args, req) => {
+    if (!req.isAuth) {
+      throw new Error(authenticationError);
+    }
+    try {
+      if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+        throw new Error(noAuthorizationError);
+      }
+      if (req.currentUser.isAdmin) {
+        let organization = await Organization.findOne({});
+        if (organization) {
+          organization.name = args.organizationInput.name;
+          organization.description = args.organizationInput.description;
+          organization.contactInfo = args.organizationInput.contactInfo;
+          await organization.save();
+          organization = await Organization.findOne().lean();
+          return {
+            ...organization,
+            exists: true,
+          };
+        } else {
+          throw new Error(organizationNotExistError);
+        }
       } else {
         throw new Error(adminAccessError);
       }
@@ -130,6 +172,9 @@ module.exports = {
         }
         if (!user) {
           throw new Error(noUserError);
+        }
+        if (user.isAdmin) {
+          throw new Error(alreadyAdminError);
         }
         const organization = await Organization.findOne({});
         if (user.isModerator) {
@@ -169,6 +214,9 @@ module.exports = {
         }
         if (!user) {
           throw new Error(noUserError);
+        }
+        if (!user.isAdmin && user.isModerator) {
+          throw new Error(alreadyModeratorError);
         }
         const organization = await Organization.findOne({});
         if (user.isAdmin) {
@@ -276,32 +324,27 @@ module.exports = {
     }
   },
 
-  getAdminModerators: async (args, req) => {
+  toggleMaintenanceMode: async (args, req) => {
     if (!req.isAuth) {
       throw new Error(authenticationError);
     }
     try {
+      if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
+        throw new Error(noAuthorizationError);
+      }
       if (req.currentUser.isAdmin) {
-        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-          throw new Error(noAuthorizationError);
+        let organization = await Organization.findOne({});
+        if (organization) {
+          organization.isUnderMaintenance = !organization.isUnderMaintenance;
+          await organization.save();
+          organization = await Organization.findOne().lean();
+          return {
+            ...organization,
+            exists: true,
+          };
+        } else {
+          throw new Error(organizationNotExistError);
         }
-        const organization = await Organization.findOne({})
-          .populate({
-            path: "adminIds",
-            options: { sort: { createdAt: -1 } },
-          })
-          .populate({
-            path: "moderatorIds",
-            options: { sort: { createdAt: -1 } },
-          });
-        let admins = organization.adminIds.filter(admin => !admin.isBlocked);
-        let moderators = organization.moderatorIds.filter(
-          moderator => !moderator.isAdmin && !moderator.isBlocked
-        );
-        return {
-          admins,
-          moderators,
-        };
       } else {
         throw new Error(adminAccessError);
       }
@@ -310,28 +353,4 @@ module.exports = {
       throw err;
     }
   },
-
-  getOrganizationData: async (args, req) => {
-    if (!req.isAuth) {
-      throw new Error(authenticationError);
-    }
-    try {
-      if (req.currentUser.isAdmin) {
-        if (req.currentUser.isBlocked || req.currentUser.isRemoved) {
-          throw new Error(noAuthorizationError);
-        }
-        const categories = await Category.estimatedDocumentCount();
-        const topics = await Topic.estimatedDocumentCount();
-        return {
-          categories,
-          topics,
-        };
-      } else {
-        throw new Error(adminAccessError);
-      }
-    } catch (err) {
-      console.log(err);
-      throw err;
-    }
-  }
 };

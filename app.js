@@ -1,24 +1,27 @@
 const createError = require("http-errors");
 const express = require("express");
 const path = require("path");
-const isAuth = require("./middleware/isAuth");
-const isUnderMaintenance = require("./middleware/isUnderMaintenance");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const cors = require("cors");
 const http = require("http");
+
+const isAuth = require("./middleware/isAuth");
+const isUnderMaintenance = require("./middleware/isUnderMaintenance");
+
 const graphqlHTTP = require("express-graphql");
 const graphQlSchema = require("./graphql/schema/index");
 const graphQlResolvers = require("./graphql/resolvers/index");
-const Topic = require("./models/topic");
-const User = require("./models/user");
-const Message = require("./models/message");
+
 require("./config/mongoose");
 
 const app = express();
 const server = http.createServer(app);
 const io = require("socket.io")(server);
+const {
+  createMessage,
+} = require("./socketFunctions/message");
 
 app.use(cors());
 app.use(morgan("dev"));
@@ -30,39 +33,20 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(isAuth);
 app.use(isUnderMaintenance);
 
-io.sockets.on("connection", function (socket, client) {
-  console.log("client connected!");
-  socket.on("room", function (room) {
-    socket.join(room);
-    console.log(`Someone joined the room: ${room}`);
+io.on("connection", (socket) => {
+  console.log("Socket connection");
+  socket.on("joinRoom", (roomId) => {
+    socket.join(roomId);
+    console.log(`Join room connection: ${roomId}`);
   });
-  socket.on("newMessage", async (data) => {
-    try {
-      console.log(Topic);
-      await Topic.findById(data.topicId, async function (err, Topic) {
-        if (err) {
-          throw new Error(err);
-        }
-        let user = await User.findById(data.userId, function (err, user) {
-          if (err) {
-            throw new Error(err);
-          }
-          return user.username;
-        });
-        let message = new Message({
-          userId: user._id,
-          replyTo: data.replyTo,
-          description: data.description,
-          likes: data.likes,
-        });
-        await message.save();
-        console.log(Topic);
-        Topic.chats.push(message);
-        await Topic.save();
-        io.to(data.topicId).emit("message", Topic.chats.pop());
-      });
-    } catch {
-      console.log(err);
+  socket.on("leaveRoom", (roomId) => {
+    socket.leave(roomId);
+    console.log(`Leave room connection: ${roomId}`);
+  });
+  socket.on("newMessage", async (data, callback) => {
+    const saveMessage = await createMessage(data, callback);
+    if (Object.keys(saveMessage).length !== 0) {
+      io.to(data.parentTopic.toString()).emit("newMessage", saveMessage.message, saveMessage.userName);
     }
   });
 });
