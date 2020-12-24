@@ -22,12 +22,7 @@ const {
 module.exports = {
   topics: async () => {
     try {
-      let topics = await Topic.find({})
-        .populate({
-          path: "topics",
-          populate: { path: "createdBy tags" },
-        })
-        .lean();
+      let topics = await Topic.find({}).populate("createdBy tags").lean();
       return topics;
     } catch (err) {
       console.log(err);

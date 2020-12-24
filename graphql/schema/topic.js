@@ -25,7 +25,7 @@ input topicInput {
   name: String!
   description: String!
   parentCategory: String
-  tagString: String
+  tagString: String!
 }
 
 input topicFindInput {

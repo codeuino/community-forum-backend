@@ -5,6 +5,7 @@ const {
   authenticationError,
   noAuthorizationError,
   topicArchivedError,
+  topicRemovedError,
 } = require("../variables/errorMessages");
 const {
   messageDeleteResult,
@@ -24,6 +25,9 @@ module.exports = {
     }
     try {
       const topic = await Topic.findById(args.messageInput.parentTopic);
+      if(!topic) {
+        throw new Error(topicRemovedError);
+      }
       if (topic.isArchived == false && topic.isSelfArchived == false) {
         let message = new Message({
           userId: req.currentUser.id,
@@ -58,7 +62,7 @@ module.exports = {
       if (message.userId.toString() == req.currentUser.id) {
         message.description = args.messageInput.description;
         const updateMessage = await message.save();
-        let user = User.findById(req.currentUser.id, "_id name");
+        let user = User.findById(req.currentUser.id, "name");
         updateMessage.user = user;
         return updateMessage;
       }
