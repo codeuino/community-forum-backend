@@ -32,16 +32,6 @@ const topicSchema = new Schema(
         }
       },
     },
-    createdBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    parentCategory: {
-      type: Schema.Types.ObjectId,
-      ref: "Category",
-      required: true,
-    },
     tagString: {
       type: String,
       default: "",
@@ -68,6 +58,32 @@ const topicSchema = new Schema(
         {
           type: Schema.Types.ObjectId,
           ref: "Task",
+        },
+      ],
+    },
+    parentCategory: {
+      type: Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    pinnedMessages: {
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Message",
+        },
+      ],
+    },
+    announcements: {
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Message",
         },
       ],
     },

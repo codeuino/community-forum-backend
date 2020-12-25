@@ -1,5 +1,4 @@
 const Organization = require("../models/organization");
-const createError = require("http-errors");
 
 module.exports = async (req, res, next) => {
   const organization = await Organization.findOne({}).lean();

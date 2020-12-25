@@ -25,6 +25,7 @@ const Category = require("../models/category");
 const Topic = require("../models/topic");
 const Message = require("../models/message");
 const Task = require("../models/task");
+const Tag = require("../models/tag");
 const server = require("../app").server;
 const jwt = require("jsonwebtoken");
 const { response } = require("express");
@@ -47,6 +48,7 @@ beforeAll(async (done) => {
   await Topic.deleteMany({});
   await Message.deleteMany({});
   await Task.deleteMany({});
+  await Tag.deleteMany({});
   organizationResponse = await testCreateOrganization();
   firstUserSignupResponse = await testCreateUser(1);
   firstUserLoginResponse = await testLoginUser(1);
@@ -83,6 +85,7 @@ test("should create a new topic when user logged in", async () => {
   expect(response.body.data.createTopic.createdBy._id).toEqual(
     firstUserSignupResponse.body.data.createUser._id
   );
+  expect(response.body.data.createTopic.tags.length).toEqual(2);
   expect(response.body.data.createTopic.parentCategory).toEqual(
     categoryResponse.body.data.createCategory._id
   );
@@ -159,6 +162,7 @@ test("should update a topic with admin/moderator/creator access", async () => {
           _id: "${topicId}"
           name: "Updated Test Topic"
           description: "Lorem Ipsum"
+          tagString: ""
         }
       ) {
         name
@@ -217,11 +221,11 @@ test("should get all messages in a particular topic", async () => {
         _id
         description
         user {
-          _id
           name {
             firstName
           }
         }
+        userId
       }}`,
     })
     .set("Accept", "application/json")
@@ -232,7 +236,7 @@ test("should get all messages in a particular topic", async () => {
   expect(response.body.data.getTopicChats[0]._id).toEqual(messageId);
   expect(response.body.data.getTopicChats[0].description).toBe("Lorem Ipsum");
   expect(response.body.data.getTopicChats[0].user.name.firstName).toEqual("TestUser");
-  expect(response.body.data.getTopicChats[0].user._id)
+  expect(response.body.data.getTopicChats[0].userId)
     .toEqual(firstUserSignupResponse.body.data.createUser._id);
 });
 

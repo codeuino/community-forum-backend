@@ -9,7 +9,7 @@ module.exports = {
       const tag = await Tag.findById(args.tagFindInput._id).populate({
         path: "topics",
         populate: { path: "createdBy tags" },
-      });
+      }).lean();
       if (!tag) {
         throw new Error(tagRemovedError);
       }

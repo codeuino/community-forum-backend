@@ -1,36 +1,28 @@
-//users
-module.exports.userBlockResult = "User account has been blocked successfully";
-module.exports.userUnblockResult = "User account has been unblocked successfully";
-module.exports.userRemoveResult = "User account has been removed successfully";
+module.exports = {
+  userBlockResult: "User account has been blocked successfully",
+  userUnblockResult: "User account has been unblocked successfully",
+  userRemoveResult: "User account has been removed successfully",
 
-//organizations
-module.exports.organizationCreatedResult = "Organization has been created successfully";
-module.exports.madeAdminResult =
-  "User account has been promoted to have admin rights";
-module.exports.madeModeratorResult =
-  "User account has been promoted to have moderator rights";
-module.exports.removeAdminResult =
-  "Admin access has been revoked for provided user account";
-module.exports.removeModeratorResult =
-  "Moderator access has been revoked for provided user account";
+  organizationCreatedResult: "Organization has been created successfully",
+  madeAdminResult: "User account has been promoted to have admin rights",
+  madeModeratorResult: "User account has been promoted to have moderator rights",
+  removeAdminResult: "Admin access has been revoked for provided user account",
+  removeModeratorResult: "Moderator access has been revoked for provided user account",
 
-//categories
-module.exports.categoryDeleteResult = "Category has been removed successfully";
-module.exports.categoryArchiveResult = "Category has been archived successfully";
-module.exports.categoryUnarchiveResult =
-  "Category has been unarchived successfully";
+  categoryDeleteResult: "Category has been removed successfully",
+  categoryArchiveResult: "Category has been archived successfully",
+  categoryUnarchiveResult: "Category has been unarchived successfully",
 
-//topics
-module.exports.topicDeleteResult = "Topic has been removed successfully";
-module.exports.topicArchiveResult = "Topic has been archived successfully";
+  topicDeleteResult: "Topic has been removed successfully",
+  topicArchiveResult: "Topic has been archived successfully",
+  topicUnarchiveResult: "Topic has been unarchived successfully",
 
-//messages
-module.exports.messageDeleteResult = "Message has been removed successfully";
-module.exports.messageAnnouncementResult = "Announcement has been created successfully";
-module.exports.removeAnnouncementResult = "Announcement has been removed successfully";
-module.exports.pinMessageResult = "Message has been pinned successfully";
-module.exports.unpinMessageResult = "Message has been unpinned successfully";
+  messageDeleteResult: "Message has been removed successfully",
+  messageAnnouncementResult: "Announcement has been created successfully",
+  removeAnnouncementResult: "Announcement has been removed successfully",
+  pinMessageResult: "Message has been pinned successfully",
+  unpinMessageResult: "Message has been unpinned successfully",
 
-//tasks
-module.exports.taskDeleteResult = "Task has been removed successfully";
-module.exports.taskCompleteResult = "Task has been completed successfully";
+  taskDeleteResult: "Task has been removed successfully",
+  taskCompleteResult: "Task has been completed successfully",
+};

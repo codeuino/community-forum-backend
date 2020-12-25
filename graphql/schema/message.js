@@ -1,6 +1,5 @@
 module.exports = `
 type chatUser {
-  _id: String
   name: userName
 }
 
@@ -15,6 +14,7 @@ type message {
   isPinned: Boolean!
   isTasked: Boolean!
   isAnnounced: Boolean!
+  createdAt: Date!
 }
 
 input messageInput {

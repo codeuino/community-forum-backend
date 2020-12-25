@@ -6,9 +6,18 @@ type topic {
   createdBy: user!
   parentCategory: String!
   tags: [tag!]
+  tagString: String
   chats: [String!]!
   isArchived: Boolean
   isSelfArchived: Boolean
+  createdAt: Date!
+  updatedAt: Date!
+}
+
+type topicDetails {
+  topic: topic!
+  pinnedMessages: [message!]
+  announcements: [message!]
 }
 
 input topicInput {
@@ -16,7 +25,7 @@ input topicInput {
   name: String!
   description: String!
   parentCategory: String
-  tagString: String
+  tagString: String!
 }
 
 input topicFindInput {

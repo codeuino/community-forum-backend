@@ -38,6 +38,7 @@ type RootQuery {
   getCategory(categoryFindInput: categoryFindInput!): category!
   getCategoryTopics(categoryFindInput: categoryFindInput!): [topic!]!
   topics: [topic!]!
+  getTopic(topicFindInput: topicFindInput!): topicDetails!
   getTopicChats(topicFindInput: topicFindInput!): [message!]!
   getTask(taskFindInput: taskFindInput!): task!
   getTopicTasks(topicFindInput: topicFindInput!): [task!]!
@@ -64,6 +65,7 @@ type RootMutation {
   deleteCategory(categoryFindInput: categoryFindInput!): resultData!
   createTopic(topicInput: topicInput!): topic!
   archiveTopic(topicFindInput: topicFindInput!): resultData!
+  unarchiveTopic(topicFindInput: topicFindInput!): resultData!
   updateTopic(topicInput: topicInput!): topic!
   deleteTopic(topicFindInput: topicFindInput!): resultData!
   createMessage(messageInput: messageInput!): message!

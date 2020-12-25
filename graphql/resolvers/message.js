@@ -5,6 +5,7 @@ const {
   authenticationError,
   noAuthorizationError,
   topicArchivedError,
+  topicRemovedError,
 } = require("../variables/errorMessages");
 const {
   messageDeleteResult,
@@ -23,7 +24,10 @@ module.exports = {
       throw new Error(noAuthorizationError);
     }
     try {
-      const topic = await Topic.findById(args.messageInput.parentTopic).lean();
+      const topic = await Topic.findById(args.messageInput.parentTopic);
+      if(!topic) {
+        throw new Error(topicRemovedError);
+      }
       if (topic.isArchived == false && topic.isSelfArchived == false) {
         let message = new Message({
           userId: req.currentUser.id,
@@ -32,10 +36,9 @@ module.exports = {
           parentTopic: args.messageInput.parentTopic,
         });
         const saveMessage = await message.save();
-        const saveTopic = await Topic.findById(args.messageInput.parentTopic);
-        saveTopic.chats.push(message);
-        await saveTopic.save();
-        let user = User.findById(req.currentUser.id, "_id name");
+        topic.chats.push(message);
+        await topic.save();
+        let user = User.findById(req.currentUser.id, "name");
         saveMessage.user = user;
         return saveMessage;
       } else {
@@ -59,7 +62,7 @@ module.exports = {
       if (message.userId.toString() == req.currentUser.id) {
         message.description = args.messageInput.description;
         const updateMessage = await message.save();
-        let user = User.findById(req.currentUser.id, "_id name");
+        let user = User.findById(req.currentUser.id, "name");
         updateMessage.user = user;
         return updateMessage;
       }
@@ -111,8 +114,11 @@ module.exports = {
         message.userId.toString() == req.currentUser.id ||
         req.currentUser.isModerator
       ) {
+        const parentTopic = await Topic.findById(message.parentTopic);
+        parentTopic.pinnedMessages.push(message);
         message.isPinned = true;
-        const updateMessage = await message.save();
+        await parentTopic.save();
+        await message.save();
         return { result: pinMessageResult };
       }
       throw new Error(noAuthorizationError);
@@ -135,8 +141,13 @@ module.exports = {
         message.userId.toString() == req.currentUser.id ||
         req.currentUser.isModerator
       ) {
+        const parentTopic = await Topic.findById(message.parentTopic);
+        parentTopic.pinnedMessages = parentTopic.pinnedMessages.filter(
+          (messageId) => messageId.toString() != message._id
+        );
         message.isPinned = false;
-        const updateMessage = await message.save();
+        await parentTopic.save();
+        await message.save();
         return { result: unpinMessageResult };
       }
       throw new Error(noAuthorizationError);
@@ -156,8 +167,11 @@ module.exports = {
     try {
       const message = await Message.findById(args.messageFindInput._id);
       if (req.currentUser.isModerator) {
+        const parentTopic = await Topic.findById(message.parentTopic);
+        parentTopic.announcements.push(message);
         message.isAnnounced = true;
-        const updateMessage = await message.save();
+        await parentTopic.save();
+        await message.save();
         return { result: messageAnnouncementResult };
       }
       throw new Error(noAuthorizationError);
@@ -177,8 +191,13 @@ module.exports = {
     try {
       const message = await Message.findById(args.messageFindInput._id);
       if (req.currentUser.isModerator) {
+        const parentTopic = await Topic.findById(message.parentTopic);
+        parentTopic.announcements = parentTopic.announcements.filter(
+          (messageId) => messageId.toString() != message._id
+        );
         message.isAnnounced = false;
-        const updateMessage = await message.save();
+        await parentTopic.save();
+        await message.save();
         return { result: removeAnnouncementResult };
       }
       throw new Error(noAuthorizationError);

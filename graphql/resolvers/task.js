@@ -1,6 +1,5 @@
 require("dotenv").config();
 const User = require("../../models/user");
-const Organization = require("../../models/organization");
 const Message = require("../../models/message");
 const Topic = require("../../models/topic");
 const Task = require("../../models/task");

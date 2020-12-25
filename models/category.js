@@ -32,11 +32,6 @@ const categorySchema = new Schema(
         }
       },
     },
-    createdBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
     topics: {
       type: [
         {
@@ -44,6 +39,11 @@ const categorySchema = new Schema(
           ref: "Topic",
         },
       ],
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
     isArchived: {
       type: Boolean,

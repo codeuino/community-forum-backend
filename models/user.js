@@ -68,11 +68,6 @@ const userSchema = new Schema(
         }
       },
     },
-    socialMedia: {
-      twitter: {
-        type: String,
-      },
-    },
     info: {
       about: {
         shortDescription: {
@@ -89,12 +84,53 @@ const userSchema = new Schema(
           trim: true,
         },
       },
-      //image upload functionality to be added
+      //TBD: Image upload functionality
       avatarUrl: {
         type: String,
-        default: null,
+        trim: true,
+        validator(avatarUrl) {
+          if (!validator.isURL(avatarUrl)) {
+            throw new Error("Enter valid image link");
+          }
+        },
       },
-      /////////////////
+    },
+    socialMedia: {
+      twitter: {
+        type: String,
+      },
+    },
+    categoriesCreated: {
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Category",
+        },
+      ],
+    },
+    topicsCreated: {
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Topic",
+        },
+      ],
+    },
+    tasksCreated: {
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Task",
+        },
+      ],
+    },
+    tasksAssigned: {
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Task",
+        },
+      ],
     },
     isFirstAdmin: {
       type: Boolean,
@@ -115,38 +151,6 @@ const userSchema = new Schema(
     isRemoved: {
       type: Boolean,
       default: false,
-    },
-    categoriesCreated: {
-      type: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: "Category",
-        },
-      ],
-    },
-    topicsCreated: {
-      type: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: "Topic",
-        },
-      ],
-    },
-    tasksAssigned: {
-      type: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: "Task",
-        },
-      ],
-    },
-    tasksCreated: {
-      type: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: "Task",
-        },
-      ],
     },
   },
   {
