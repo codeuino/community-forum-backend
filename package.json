@@ -1,16 +1,40 @@
 {
-  "name": "community-forum-backend",
+  "name": "spansberry-backend",
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "nodemon ./bin/www",
+    "test": "env-cmd -f .env.test jest --detectOpenHandles",
+    "travisTest": "env-cmd -f .env.travis jest --detectOpenHandles"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.19.0",
     "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
     "debug": "~2.6.9",
+    "dotenv": "^8.2.0",
     "express": "~4.16.1",
-    "http-errors": "~1.6.3",
+    "express-graphql": "^0.9.0",
+    "graphql": "^15.3.0",
+    "graphql-iso-date": "^3.6.1",
+    "http-errors": "^1.8.0",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.10.7",
     "morgan": "~1.9.1",
-    "pug": "2.0.0-beta11"
+    "nodemon": "^2.0.4",
+    "pug": "2.0.0-beta11",
+    "socket.io": "^2.3.0",
+    "validator": "^13.1.17"
+  },
+  "devDependencies": {
+    "env-cmd": "^10.1.0",
+    "jest": "^26.5.3",
+    "supertest": "^5.0.0"
+  },
+  "jest": {
+    "verbose": true,
+    "testEnvironment": "node",
+    "testTimeout": 30000
   }
 }
